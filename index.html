@@ -73,7 +73,8 @@ nav button{border:0;background:0;color:var(--mu);display:flex;flex-direction:col
 nav button i{font-style:normal;font-size:21px}nav button{border-radius:12px;padding:4px 0}nav button.on{background:var(--as)}.act:active,.btn:active{transform:scale(.98)}nav button.on{color:var(--pr)}
 [data-theme=noturno] nav button.on{color:#F59E0B}
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;padding:14px}.mo.on{display:flex}
-.mb{background:var(--card);color:var(--tx);width:100%;max-width:400px;border-radius:20px;padding:18px;max-height:90vh;overflow-y:auto}
+html.lock,html.lock body{overflow:hidden}
+.mb{background:var(--card);color:var(--tx);width:100%;max-width:400px;border-radius:20px;padding:18px;max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain}
 .mh{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:calc(17px*var(--fs))}
 .toast{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:300;display:none;max-width:90%;text-align:center}
 #rep{display:none}
@@ -390,7 +391,7 @@ function voz(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
 
 function render(){home();hist();chk();calc();casa();contas();plano()}
 applyTheme(S.tema||(matchMedia('(prefers-color-scheme: dark)').matches?'noturno':'executivo'));
-const CC=['Mercado','Lanche na rua','Transporte','Lazer','Saúde','Outros'],cmes=dt=>{const d=new Date(dt),n=new Date();return !isNaN(d)&&d.getMonth()==n.getMonth()&&d.getFullYear()==n.getFullYear()},LA=()=>S.casa.listas.find(l=>l.id==cl);
+const CC=['Mercado','Lanche na rua','Transporte','Lazer','Saúde','Outros'],cmes=dt=>inM(dt,0),LA=()=>S.casa.listas.find(l=>l.id==cl);
 let cl=null;
 function addG(){const d=$('gd').value.trim(),p=+$('gp').value||0;if(!d||p<=0){toast('Informe a descrição e o valor');return}S.casa.gastos.unshift({id:Date.now(),dt:nowL(),cat:$('gc').value,d,p});$('gd').value='';$('gp').value='';save();casa()}
 function delG(id){S.casa.gastos=S.casa.gastos.filter(g=>g.id!=id);save();casa()}
@@ -412,7 +413,7 @@ function casa(){const L=S.casa.listas;if(!LA()&&L.length)cl=L[0].id;const l=LA()
  $('gL').innerHTML=S.casa.gastos.slice(0,20).map(g=>'<div class="it"><div class="b"><div class="t"><span>'+esc(g.d)+'</span><span>'+R(g.p)+'</span></div><small>'+esc(g.cat)+' • '+fd(g.dt)+'</small></div><button class="mini" onclick="delG('+g.id+')">🗑️</button></div>').join('')||'<div class="emp">Nenhum gasto ainda. Anote o primeiro acima.</div>';
  casaT()}
 const CI={cartao:'💳',agua:'💧',luz:'💡',internet:'🌐',outro:'📌'};
-const mesK=()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')};
+const mesK=()=>mK(0);
 function dueD(dia){const n=new Date(),dm=new Date(n.getFullYear(),n.getMonth()+1,0).getDate();return new Date(n.getFullYear(),n.getMonth(),Math.min(dia,dm),12)}
 const ctVal=b=>b.vm&&b.vm[mesK()]!=null?b.vm[mesK()]:b.valor;
 function cRows(){const k=mesK(),r=[],n=new Date();
@@ -510,6 +511,8 @@ function pgFn(i,vid){const c=vid?S.cars.find(x=>x.id==vid):car(),s=c&&c.fin;if(!
  if(s.pg[i]){if(s.pg[i]!='antes')S.regs=S.regs.filter(r=>r.id!=s.pg[i]);delete s.pg[i]}
  else{const id=Date.now();S.regs.push({id,vid:c.id,t:'f',l:s.nome,mc:'',dt:nowL(),p:s.tot/s.n,m:0,d:'Financiamento — parcela '+(i+1)+'/'+s.n,lt:0,k:0,ag:false,si:i});s.pg[i]=id}
  save();render()}
+new MutationObserver(()=>document.documentElement.classList.toggle('lock',!!document.querySelector('.mo.on'))).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('lock')&&!(e.target.closest&&e.target.closest('.mb')))e.preventDefault()},{passive:false});
 $('gc').innerHTML=CC.map(c=>'<option>'+c+'</option>').join('');
 $('sp').innerHTML=Array.from({length:12},(_,i)=>'<option>'+(i+1)+'</option>').join('');
 render();
