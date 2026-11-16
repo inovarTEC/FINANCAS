@@ -68,7 +68,7 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .cr{background:var(--ph);border:1px solid var(--bd);border-radius:14px;padding:13px;margin-top:12px}
 .cl{display:flex;justify-content:space-between;margin-bottom:8px;font-size:calc(13px*var(--fs))}
 .cl.t{border-top:1px dashed var(--bd);padding-top:10px;font-weight:900;font-size:calc(19px*var(--fs));color:var(--ac)}
-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:var(--card);border-top:1px solid var(--bd);display:grid;grid-template-columns:repeat(6,1fr);padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));z-index:90}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:var(--card);border-top:1px solid var(--bd);display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));z-index:90}
 nav button{border:0;background:0;color:var(--mu);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:calc(10px*var(--fs));font-weight:700;cursor:pointer}
 nav button i{font-style:normal;font-size:21px}nav button{border-radius:12px;padding:4px 0}nav button.on{background:var(--as)}.act:active,.btn:active{transform:scale(.98)}nav button.on{color:var(--pr)}
 [data-theme=noturno] nav button.on{color:#F59E0B}
@@ -87,14 +87,14 @@ html.lock,html.lock body{overflow:hidden}
 <header class="hd">
  <div><h1>🚘 AutoGestor Pro</h1></div>
  <div class="ha">
-  <select id="perf" onchange="S.perf=this.value;save()" aria-label="Perfil"><option>Uso pessoal</option><option>Eletricista</option><option>Encanador</option><option>Motorista de app</option><option>Frete e entregas</option><option>Técnico de visitas</option></select>
-  <button class="ib" onclick="cycleTheme()" aria-label="Trocar visual">🎨</button>
+  <button class="ib" onclick="openAj()" aria-label="Ajustes">⚙️</button>
   <button class="ib" onclick="go('inicio');$('al').scrollIntoView({behavior:'smooth'})" aria-label="Alertas">🔔<i class="dot" id="dot"></i></button>
  </div>
 </header>
 
 <section class="tab on" id="t-inicio">
  <div class="card" id="ov" onclick="go('plano')" style="cursor:pointer"></div>
+ <div class="card" id="obI" onclick="go('plano')" style="cursor:pointer;display:none"></div>
  <div class="card" id="al"><div class="ct">🔔 Agenda e pendências</div><div id="alL"></div></div>
 </section>
 
@@ -126,12 +126,20 @@ html.lock,html.lock body{overflow:hidden}
  <div class="card" id="fn"></div>
  </div>
  <div class="vp" id="vp-ofi" style="display:none">
+ <div class="card"><div class="ct">🔔 Manutenção por km</div><div id="manL"></div>
+  <div class="ct" style="margin:12px 0 6px">+ Novo lembrete</div>
+  <select id="mnp" onchange="manPre()"></select>
+  <div class="row" style="margin-top:8px"><input id="mnn" maxlength="40" placeholder="Nome"><input id="mni" type="number" inputmode="numeric" placeholder="A cada (km)"></div>
+  <input id="mnu" type="number" inputmode="numeric" placeholder="Última troca em (km). Vazio = km atual" style="margin-top:8px">
+  <button class="btn s" onclick="manAdd()">+ Adicionar lembrete</button></div>
  <div class="card"><div class="ct">🔧 Checklist da oficina: feito e pendente</div><div class="row"><input id="nc" placeholder="Novo item…" onkeydown="if(event.key=='Enter')addC()"><button class="btn" style="flex:0 0 56px;margin:0" onclick="addC()">+</button></div><div id="cL" style="margin-top:6px"></div></div>
  </div>
  </div>
 </section>
 
 <section class="tab" id="t-casa">
+ <div class="seg" id="cxs"><button class="on" data-v="dia" onclick="cxv('dia')">🛒 Dia a dia</button><button data-v="ct" onclick="cxv('ct')">💳 Contas e vencimentos</button></div>
+ <div id="cx-dia">
  <div class="card"><div class="big"><small>Gasto da casa neste mês</small><h2 id="czT"></h2></div><div class="g2"><div class="kpi"><span>🛒 Compras marcadas</span><strong id="czC"></strong></div><div class="kpi"><span>🍔 Gastos do dia a dia</span><strong id="czG"></strong></div></div></div>
  <div class="card"><div class="ct">➕ Gasto do dia a dia</div>
   <input id="gd" placeholder="Ex.: lanche, padaria, uber…">
@@ -140,9 +148,8 @@ html.lock,html.lock body{overflow:hidden}
  <div class="card"><div class="ct">📋 Minhas listas</div><div class="chips" id="lc"></div>
   <div class="row"><input id="ln" placeholder="Nome (ex.: Mercado, Limpar o jardim)"><select id="lt"><option value="compra">🛒 Compras</option><option value="servico">🧹 Serviço</option></select></div>
   <button class="btn s" onclick="addL()">+ Criar lista</button><div id="lB"></div></div>
-</section>
-
-<section class="tab" id="t-contas">
+ </div>
+ <div id="cx-ct" style="display:none">
  <div class="card"><div class="big"><small id="ctM"></small><h2 id="ctT"></h2></div><div class="g2"><div class="kpi"><span>✔ Pago</span><strong id="ctP"></strong></div><div class="kpi"><span>⏳ A pagar</span><strong id="ctA"></strong></div></div></div>
  <div class="card"><div class="ct">🗓️ Vencimentos do mês</div><div id="ctL"></div></div>
  <div class="card"><div class="ct">➕ Nova conta fixa</div>
@@ -150,6 +157,7 @@ html.lock,html.lock body{overflow:hidden}
   <div class="row" style="margin-top:8px"><select id="ctp"><option value="cartao">💳 Cartão de crédito</option><option value="agua">💧 Água</option><option value="luz">💡 Luz</option><option value="internet">🌐 Internet</option><option value="outro">📌 Outra</option></select><input id="cd" type="number" inputmode="numeric" min="1" max="31" placeholder="Dia do vencimento"></div>
   <input id="cv" type="number" inputmode="decimal" step="0.01" placeholder="Valor padrão (R$)" style="margin-top:8px">
   <button class="btn" onclick="ctAdd()">Adicionar conta</button></div>
+ </div>
 </section>
 
 <section class="tab" id="t-plano">
@@ -161,11 +169,8 @@ html.lock,html.lock body{overflow:hidden}
   <input id="pen" placeholder="Ex.: bico, freelance, venda…">
   <div class="row" style="margin-top:8px"><input id="pev" type="number" inputmode="decimal" step="0.01" placeholder="Valor (R$)"><select id="pef"><option value="semanal">Toda semana</option><option value="mensal">Todo mês</option><option value="unico">Só este mês</option></select></div>
   <button class="btn s" onclick="plAdd()">+ Adicionar ganho extra</button><div id="peL" style="margin-top:6px"></div></div>
+ <div class="card" id="obC"><div class="ct">🎯 Meus objetivos</div><div id="obL"></div><button class="btn s" id="obN" onclick="openOb()">+ Novo objetivo</button></div>
  <div class="card"><div class="ct" id="plT"></div><div id="plR"></div></div>
- <div class="card" id="nv" style="display:none"><div class="ct">☁️ Backup na nuvem</div><small style="color:var(--mu)">Guarda uma cópia privada dos seus dados na sua conta. Salvar e restaurar são manuais.</small><div class="row" style="margin-top:10px"><button class="btn s" onclick="nuvem('s')">⬆️ Salvar</button><button class="btn s" onclick="nuvem('r')">⬇️ Restaurar</button></div><div class="ins" id="nvs" style="margin-top:10px"></div></div>
- <button class="btn s" onclick="openCsv()">📤 Exportar todos os gastos (CSV)</button>
- <button class="btn s" onclick="openBk()">💾 Backup dos dados</button>
- <button class="btn s" onclick="limpar()">🧹 Apagar todos os dados</button>
 </section>
 
 <section class="tab" id="t-prof">
@@ -182,8 +187,7 @@ html.lock,html.lock body{overflow:hidden}
 <nav>
  <button class="on" data-t="inicio" onclick="go('inicio')"><i>📊</i>Início</button>
  <button data-t="veic" onclick="go('veic')"><i>🚘</i>Veículos</button>
- <button data-t="casa" onclick="go('casa')"><i>🏠</i>Casa</button>
- <button data-t="contas" onclick="go('contas')"><i>💳</i>Contas</button>
+ <button data-t="casa" onclick="go('casa')"><i>🏠</i>Casa/Contas</button>
  <button data-t="plano" onclick="go('plano')"><i>🎯</i>Plano</button>
  <button data-t="prof" onclick="go('prof')"><i>👷</i>Trabalho</button>
 </nav>
@@ -246,12 +250,51 @@ html.lock,html.lock body{overflow:hidden}
  <button class="btn s dlb" style="display:none" onclick="saveFile('gastos.csv',$('csv').value)">💾 Salvar arquivo .csv</button>
 </div></div>
 
+<div class="mo" id="mOb"><div class="mb">
+ <div class="mh"><span id="obH">Novo objetivo</span><button class="ib" onclick="closeM()">✖</button></div>
+ <label>Tipo</label><select id="obi"></select>
+ <label>Nome</label><input id="obn" maxlength="40" placeholder="Ex.: Carro novo, Viagem Bahia">
+ <div class="row"><div><label>Valor da meta (R$)</label><input id="obm" type="number" inputmode="decimal" step="0.01"></div><div><label>Já guardado (R$)</label><input id="obs" type="number" inputmode="decimal" step="0.01"></div></div>
+ <label>Até quando? (mês)</label><input id="obp" type="month">
+ <label>Onde você guarda?</label><select id="obo"></select>
+ <button class="btn" onclick="obSave()">Salvar objetivo</button>
+ <button class="btn s" id="obD" style="display:none;color:#DC2626;border-color:#DC2626" onclick="obDel()">🗑️ Excluir objetivo</button>
+ <small style="color:var(--mu);display:block;margin-top:10px">Valores informados por você, sem rendimento. É uma ajuda de organização, não consultoria financeira.</small>
+</div></div>
+
+<div class="mo" id="mAj"><div class="mb">
+ <div class="mh"><span>⚙️ Ajustes</span><button class="ib" onclick="closeM()">✖</button></div>
+ <label>Perfil</label>
+ <select id="perf" onchange="setPerf(this.value)" aria-label="Perfil"><option>Uso pessoal</option><option>Eletricista</option><option>Encanador</option><option>Motorista de app</option><option>Frete e entregas</option><option>Técnico de visitas</option></select>
+ <label>Visual</label>
+ <div class="seg" id="ajth" style="margin-bottom:0"><button data-th="executivo" onclick="setTema('executivo')">Executivo</button><button data-th="noturno" onclick="setTema('noturno')">Noturno</button><button data-th="facil" onclick="setTema('facil')">Fácil de ler</button></div>
+ <div class="ct" style="margin:16px 0 0">Seus dados</div>
+<div class="card" id="nv" style="display:none;margin:8px 0 0;box-shadow:none"><div class="ct">☁️ Backup na nuvem</div><small style="color:var(--mu)">Guarda uma cópia privada dos seus dados na sua conta. Salvar e restaurar são manuais.</small><div class="row" style="margin-top:10px"><button class="btn s" onclick="nuvem('s')">⬆️ Salvar</button><button class="btn s" onclick="nuvem('r')">⬇️ Restaurar</button></div><div class="ins" id="nvs" style="margin-top:10px"></div></div>
+ <button class="btn s" onclick="closeM();openCsv()">📤 Exportar todos os gastos (CSV)</button>
+ <button class="btn s" onclick="closeM();openBk()">💾 Backup dos dados</button>
+ <button class="btn s" style="color:#DC2626;border-color:#DC2626" onclick="closeM();limpar()">🧹 Apagar todos os dados</button>
+</div></div>
+
+<div class="mo" id="mWel"><div class="mb">
+ <div class="mh"><span>Como você vai usar o app?</span></div>
+ <small style="color:var(--mu)">Você pode mudar isso depois em ⚙️ Ajustes.</small>
+ <button class="btn" onclick="setPerf('Uso pessoal')">👤 Uso pessoal</button>
+ <div class="ct" style="margin:14px 0 0">Para trabalhar com veículo</div>
+ <button class="btn s" onclick="setPerf('Eletricista')">⚡ Eletricista</button>
+ <button class="btn s" onclick="setPerf('Encanador')">🔧 Encanador</button>
+ <button class="btn s" onclick="setPerf('Motorista de app')">🚘 Motorista de app</button>
+ <button class="btn s" onclick="setPerf('Frete e entregas')">📦 Frete e entregas</button>
+ <button class="btn s" onclick="setPerf('Técnico de visitas')">🧰 Técnico de visitas</button>
+</div></div>
+
 <div class="mo" id="mBk"><div class="mb">
  <div class="mh"><span>Backup dos dados</span><button class="ib" onclick="closeM()">✖</button></div>
  <label>Copie este texto e guarde. Para restaurar, cole um backup aqui e toque em Restaurar.</label>
+ <div class="ins" id="bks" style="margin:8px 0"></div>
  <textarea id="bk" rows="8"></textarea>
- <button class="btn s" onclick="$('bk').select();try{navigator.clipboard.writeText($('bk').value);toast('Backup copiado')}catch(e){toast('Selecione e copie o texto')}">📋 Copiar backup</button>
+ <button class="btn s" onclick="$('bk').select();try{navigator.clipboard.writeText($('bk').value).then(function(){toast('Backup copiado');bkOk()},function(){toast('Selecione e copie o texto')})}catch(e){toast('Selecione e copie o texto')}">📋 Copiar backup</button>
  <button class="btn" onclick="restore()">♻️ Restaurar</button>
+ <button class="btn s" id="bkU" style="display:none" onclick="desfazer()">↩️ Desfazer última restauração</button>
  <button class="btn s dlb" style="display:none" onclick="saveFile('backup-autogestor.json',$('bk').value)">💾 Salvar arquivo .json</button>
 </div></div>
 
@@ -264,22 +307,139 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const R=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const KEY='agp1',TH=['executivo','noturno','facil'],NM={c:'Abastecimento',o:'Oficina',i:'IPVA / taxas',s:'Seguro',f:'Financiamento'},IC={c:'⛽',o:'🔧',i:'📄',s:'🛡️',f:'🏦'};
 const COL=['#10B981','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#14B8A6'],TI={carro:'🚘 ',moto:'🏍️ ',bike:'🚲 ',ebike:'⚡🚲 '};
-let S={v:6,cars:[],cur:null,perf:'Uso pessoal',tema:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]}};
+let S={v:6,cars:[],cur:null,perf:'Uso pessoal',tema:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[]};
 function mig(x){if(!x||typeof x!='object')return null;if(x.car&&!x.cars){x.cars=[Object.assign({id:1,tipo:'carro'},x.car)];x.cur=1;(x.regs||[]).forEach(r=>{r.vid=1});delete x.car}
  if(!Array.isArray(x.cars)||!Array.isArray(x.regs))return null;x.v=2;x.regs.forEach(r=>{if(!r.vid&&x.cars[0])r.vid=x.cars[0].id});if(!x.cars.some(c=>c.id==x.cur))x.cur=x.cars.length?x.cars[0].id:null;
  x.chk=x.chk||{};x.chk.oficina=x.chk.oficina||[];
  if(!x.casa){x.casa={listas:[],gastos:[]};[['compras','Compras de casa','compra'],['diario','Tarefas do dia','servico']].forEach(([k,n,tp])=>{if(x.chk[k]&&x.chk[k].length)x.casa.listas.push({id:Date.now()+x.casa.listas.length,nome:n,tipo:tp,itens:x.chk[k].map(i=>({t:i.t,d:!!i.d,p:0,dt:''}))});delete x.chk[k]})}
  if(!x.contas)x.contas={itens:[]};if(!x.plano)x.plano={sal:0,gu:10,iv:10,extras:[]};x.cars.forEach((c,i)=>{if(c.tipo=='ebike'){c.tipo='bike';c.el=true}if(!c.nome)c.nome=c.mo||c.m||'Veículo';if(!c.chk)c.chk=i==0?x.chk.oficina.slice():[]});delete x.chk;x.v=6;return Object.assign({},S,x)}
-try{const x=mig(JSON.parse(localStorage.getItem(KEY)));if(x)S=x}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-let per='mes',flt='',editId=null;
+/* ===== Validação e carga segura (Etapa 1) ===== */
+const OBI=['🚗','✈️','🏠','🛡️','🎯'],OBN={'🚗':'Veículo','✈️':'Viagem','🏠':'Casa','🛡️':'Reserva de emergência','🎯':'Outro sonho'},OBO=['Poupança','Nubank','Inter','Mercado Pago','Outro'];
+const TOPK=['v','cars','cur','perf','tema','regs','casa','contas','plano','bk','perfOk','obj','car','chk'];
+const isO=o=>!!o&&typeof o=='object'&&!Array.isArray(o);
+const nm=(v,d)=>{v=+v;return isFinite(v)?v:(d||0)};
+const arO=(a,f)=>Array.isArray(a)?a.filter(isO):[];
+let DROP=0;
+function carregar(raw){
+ DROP=0;if(!isO(raw))return null;
+ const w={};TOPK.forEach(k=>{if(Object.prototype.hasOwnProperty.call(raw,k))w[k]=raw[k]});
+ if(!Array.isArray(w.cars)&&!isO(w.car))return null;
+ if(w.cars!==undefined&&!Array.isArray(w.cars))return null;
+ if(w.regs!==undefined&&!Array.isArray(w.regs))return null;
+ if(w.cars){const n=w.cars.length;w.cars=arO(w.cars);DROP+=n-w.cars.length}
+ if(w.regs){const n=w.regs.length;w.regs=arO(w.regs);DROP+=n-w.regs.length}
+ const x=mig(w);if(!x)return null;
+ const out={v:6,cars:[],cur:x.cur,perf:'Uso pessoal',tema:TH.includes(x.tema)?x.tema:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[]};
+ const PF=[...$('perf').options].map(o=>o.value);if(PF.includes(x.perf))out.perf=x.perf;out.perfOk=false;
+ const dt=/^\d{4}-\d{2}-\d{2}$/;
+ x.cars.forEach(c=>{
+  c.id=nm(c.id,Date.now()+out.cars.length);c.km=nm(c.km);c.ki=nm(c.ki);c.nome=String(c.nome==null?'':c.nome);
+  c.tipo=['carro','moto','bike'].includes(c.tipo)?c.tipo:'carro';
+  c.chk=arO(c.chk).map(i=>({t:String(i.t==null?'':i.t),d:!!i.d}));
+  {const mm=[];arO(c.man).forEach(m=>{const cd=Math.floor(nm(m.cada)),nn=String(m.nome==null?'':m.nome).trim().slice(0,40);if(!nn||!(cd>=100&&cd<=500000)||mm.length>=10){DROP++;return}mm.push({id:nm(m.id,Date.now()+mm.length),nome:nn,cada:cd,ult:Math.max(0,Math.floor(nm(m.ult)))})});c.man=mm}
+  ['seg','fin'].forEach(k=>{if(c[k]===undefined)return;const q=c[k];
+   if(!isO(q)||!dt.test(String(q.sd))||!(Math.floor(+q.n)>=1&&Math.floor(+q.n)<=120)||!(+q.tot>=0)){delete c[k];DROP++;return}
+   q.n=Math.floor(+q.n);q.tot=+q.tot;q.sd=String(q.sd);q.nome=String(q.nome==null?'':q.nome);if(!isO(q.pg))q.pg={};if(q.fim!=null&&!dt.test(String(q.fim)))q.fim=''});
+  out.cars.push(c)});
+ if(!out.cars.some(c=>c.id==out.cur))out.cur=out.cars.length?out.cars[0].id:null;
+ x.regs.forEach(r=>{r.id=nm(r.id,Date.now()+out.regs.length);r.p=nm(r.p);r.m=nm(r.m);r.dt=String(r.dt==null?'':r.dt);out.regs.push(r)});
+ const ca=isO(x.casa)?x.casa:{};
+ arO(ca.listas).forEach(l=>{l.id=nm(l.id,Date.now()+out.casa.listas.length);l.nome=String(l.nome==null?'':l.nome);l.tipo=l.tipo=='compra'?'compra':'servico';
+  l.itens=arO(l.itens).map(i=>({t:String(i.t==null?'':i.t),d:!!i.d,p:nm(i.p),dt:String(i.dt==null?'':i.dt)}));out.casa.listas.push(l)});
+ arO(ca.gastos).forEach(g=>{g.id=nm(g.id,Date.now()+out.casa.gastos.length);g.p=nm(g.p);g.d=String(g.d==null?'':g.d);g.cat=String(g.cat==null?'':g.cat);g.dt=String(g.dt==null?'':g.dt);out.casa.gastos.push(g)});
+ const co=isO(x.contas)?x.contas:{};
+ arO(co.itens).forEach(b=>{b.id=nm(b.id,Date.now()+out.contas.itens.length);b.nome=String(b.nome==null?'':b.nome);b.dia=Math.min(31,Math.max(1,Math.floor(nm(b.dia,1))));b.valor=nm(b.valor);if(!isO(b.pg))b.pg={};if(!isO(b.vm))b.vm={};out.contas.itens.push(b)});
+ const p=isO(x.plano)?x.plano:{};
+ out.plano.sal=Math.max(0,nm(p.sal));let gu=nm(p.gu,10),iv=nm(p.iv,10);if(gu<0||iv<0||gu+iv>100){gu=10;iv=10}out.plano.gu=gu;out.plano.iv=iv;
+ arO(p.extras).forEach(e=>{e.id=nm(e.id,Date.now()+out.plano.extras.length);e.nome=String(e.nome==null?'':e.nome);e.v=nm(e.v);out.plano.extras.push(e)});
+ const b=isO(x.bk)?x.bk:{};out.bk={ult:Math.max(0,nm(b.ult)),cnt:Math.max(0,nm(b.cnt)),adiar:Math.max(0,nm(b.adiar))};
+ arO(x.obj).forEach(o=>{const mt=nm(o.meta),pz=String(o.prazo);if(!(mt>0)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(pz)||out.obj.length>=3){DROP++;return}
+  out.obj.push({id:nm(o.id,Date.now()+out.obj.length),nome:String(o.nome==null?'':o.nome).slice(0,40),ic:OBI.includes(o.ic)?o.ic:'🎯',meta:mt,saldo:Math.max(0,nm(o.saldo)),prazo:pz,onde:OBO.includes(o.onde)?o.onde:'Outro',mk:Math.max(0,Math.min(100,nm(o.mk))),hist:arO(o.hist).slice(-24).map(h=>({dt:String(h.dt==null?'':h.dt),v:nm(h.v)}))})});
+ out.perfOk=!!x.perfOk||out.cars.length>0||out.regs.length>0||out.perf!='Uso pessoal';
+ return out}
+let LOADERR=false;
+try{const raw=localStorage.getItem(KEY);if(raw){const x=carregar(JSON.parse(raw));if(x)S=x;else throw 0}}catch(e){LOADERR=true;try{localStorage.setItem(KEY+'_corrupt',localStorage.getItem(KEY))}catch(e2){}}
+let svErr=0;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));svErr=0;return true}catch(e){if(!svErr||Date.now()-svErr>3e4){svErr=Date.now();toast('Não foi possível salvar neste aparelho. Faça um backup agora.')}return false}};
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
+let per='mes',flt='',editId=null,obEd=null;
 const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600)};
+if(LOADERR)setTimeout(()=>toast('Seus dados salvos estavam ilegíveis. Uma cópia foi guardada. Restaure um backup.'),300);
 const tot=r=>(+r.p||0)+(+r.m||0),sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
 const fd=s=>{const d=new Date(s);return isNaN(d)?'—':d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
 const nowL=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16);
 
 function applyTheme(t){S.tema=t;document.documentElement.setAttribute('data-theme',t);document.body.setAttribute('data-theme',t);save()}
-function cycleTheme(){applyTheme(TH[(TH.indexOf(S.tema)+1)%3]);toast('Visual: '+{executivo:'Executivo',noturno:'Noturno',facil:'Fácil de ler'}[S.tema])}
+/* ===== Objetivos (Etapa 3) ===== */
+const obMes=p=>{const[y,m]=p.split('-').map(Number),n=new Date();return(y-n.getFullYear())*12+(m-1-n.getMonth())};
+const obLbl=p=>{const[y,m]=p.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).replace('.','')};
+function obCalc(o){const falta=Math.max(0,o.meta-o.saldo),m=Math.max(1,obMes(o.prazo)+1);return{falta,m,pct:Math.min(100,Math.floor(o.saldo/o.meta*100)),men:falta/m,venc:obMes(o.prazo)<0&&falta>0,ok:falta<=0}}
+function obTot(){const A=S.obj.map(obCalc);return{A,need:A.reduce((a,c)=>a+c.men,0),disp:plRenda()*S.plano.gu/100}}
+function obRender(){const e=$('obL');if(!e)return;const{A,need,disp}=obTot(),r=plRenda(),aperta=r>0&&need>disp+0.005;$('obN').style.display=S.obj.length>=3?'none':'';
+ e.innerHTML=!S.obj.length?'<div class="emp">Guarde para um sonho: carro, viagem, reserva de emergência… Crie seu primeiro objetivo.</div>':S.obj.map((o,i)=>{const c=A[i],sh=aperta&&need>0?disp*(c.men/need):c.men,
+  quando=aperta&&!c.ok&&sh>0?(()=>{const n=new Date(),k=Math.ceil(c.falta/sh);return new Date(n.getFullYear(),n.getMonth()+k-1,1)})():null;
+  return '<div style="border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--ph)">'
+  +'<div class="cl"><b>'+o.ic+' '+esc(o.nome||OBN[o.ic])+'</b><button class="mini" onclick="openOb('+o.id+')">✏️</button></div>'
+  +'<small style="color:var(--mu)">Meta '+R(o.meta)+' • até '+obLbl(o.prazo)+' • '+esc(o.onde)+'</small>'
+  +'<div style="height:12px;border-radius:8px;background:var(--bd);overflow:hidden;margin:8px 0"><div style="height:100%;width:'+c.pct+'%;background:var(--ac)"></div></div>'
+  +'<div class="cl"><span>'+R(o.saldo)+' guardados</span><b>'+c.pct+'%</b></div>'
+  +(c.ok?'<div class="ins">🎉 Objetivo alcançado!</div>':'<div class="ins">'+(c.venc?'⚠️ O prazo já passou. Edite a data. ':'')+'Guardar por mês: <b>'+R(c.men)+'</b> • '+c.m+' mês(es) restante(s)</div>'
+   +(quando?'<div class="ins" style="margin-top:6px">⚠️ Não cabe no plano. Com <b>'+R(sh)+'</b>/mês você chega em <b>'+obLbl(quando.getFullYear()+'-'+String(quando.getMonth()+1).padStart(2,'0'))+'</b>.</div>':'')
+   +'<div class="row" style="margin-top:8px"><input id="obv'+o.id+'" type="number" inputmode="decimal" step="0.01" placeholder="Valor (R$)" value="'+(c.men>0?c.men.toFixed(2):'')+'"><button class="btn" style="flex:0 0 112px;margin:0" onclick="obG('+o.id+')">+ Guardei</button></div>'
+   +(()=>{const mx=Math.max(100,Math.ceil(c.men*3/50)*50),st=mx>=2000?50:10,v0=Math.min(mx,Math.max(st,Math.round(c.men/st)*st));return '<div class="ct" style="margin:12px 0 2px">🎚️ E se eu guardar…</div><input type="range" id="obr'+o.id+'" min="0" max="'+mx+'" step="'+st+'" value="'+v0+'" oninput="obSim('+o.id+')" style="padding:0;border:0;background:transparent"><div class="ins" id="obx'+o.id+'" style="margin-top:4px"></div>'})())+'</div>'}).join('')
+  +(S.obj.length&&need>0?'<div class="ins">'+(r<=0?'💡 Informe sua renda acima para ver se os objetivos cabem no plano.':aperta?'⚠️ Os objetivos pedem <b>'+R(need)+'</b>/mês, mas seu plano reserva <b>'+R(disp)+'</b> ('+S.plano.gu+'% da renda). Aumente o prazo ou o % de guardar.':'✅ Cabe no seu plano: pedem <b>'+R(need)+'</b>/mês de <b>'+R(disp)+'</b> reservados.')+'</div>':'');
+ S.obj.forEach(o=>{if(!obCalc(o).ok)obSim(o.id)});obInicio()}
+function obInicio(){const e=$('obI');if(!e)return;if(!S.obj.length){e.style.display='none';return}
+ const L=S.obj.map(o=>({o,c:obCalc(o)})),P=L.filter(x=>!x.c.ok).sort((a,b)=>a.o.prazo<b.o.prazo?-1:1)[0]||L[0],o=P.o,c=P.c;e.style.display='';
+ e.innerHTML='<div class="ct">🎯 Meu objetivo</div><div class="cl"><span>'+o.ic+' '+esc(o.nome||OBN[o.ic])+'</span><b>'+c.pct+'%</b></div><div style="height:10px;border-radius:8px;background:var(--bd);overflow:hidden;margin:6px 0"><div style="height:100%;width:'+c.pct+'%;background:var(--ac)"></div></div><small style="color:var(--mu)">'+(c.ok?'🎉 Alcançado!':'Guardar '+R(c.men)+'/mês • faltam '+c.m+' mês(es)')+'</small>'}
+function openOb(id){obEd=id?S.obj.find(x=>x.id==id)||null:null;if(!obEd&&S.obj.length>=3){toast('Limite de 3 objetivos');return}
+ const o=obEd||{ic:'🚗',nome:'',meta:'',saldo:'',prazo:mK(-12),onde:'Poupança'};
+ $('obH').textContent=obEd?'Editar objetivo':'Novo objetivo';$('obi').value=o.ic;$('obn').value=o.nome;$('obm').value=o.meta;$('obs').value=o.saldo;$('obp').value=o.prazo;$('obo').value=o.onde;$('obD').style.display=obEd?'':'none';$('mOb').classList.add('on')}
+function obSave(){if(!obEd&&S.obj.length>=3){toast('Limite de 3 objetivos');return}const ic=$('obi').value,nome=$('obn').value.trim().slice(0,40),meta=+$('obm').value,saldo=+$('obs').value||0,prazo=$('obp').value,onde=$('obo').value;
+ if(!(meta>0)){toast('Informe o valor da meta');return}if(saldo<0){toast('O valor guardado não pode ser negativo');return}
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(prazo)){toast('Escolha o mês do prazo');return}
+ if(obMes(prazo)<0&&!(obEd&&obEd.prazo==prazo)){toast('Escolha um mês de hoje em diante');return}
+ if(obEd)Object.assign(obEd,{ic,nome,meta,saldo,prazo,onde,mk:Math.min(100,Math.floor(saldo/meta*100))});
+ else S.obj.push({id:Date.now(),ic,nome,meta,saldo,prazo,onde,mk:Math.min(100,Math.floor(saldo/meta*100)),hist:[]});
+ save();closeM();render();toast('Objetivo salvo')}
+function obDel(){if(obEd&&confirm('Excluir este objetivo? O histórico dele será apagado.')){S.obj=S.obj.filter(x=>x.id!=obEd.id);save();closeM();render()}}
+function obG(id){const o=S.obj.find(x=>x.id==id),v=+($('obv'+id)||{}).value;if(!o)return;if(!(v>0)){toast('Informe o valor que você guardou');return}
+ o.saldo=Math.round((o.saldo+v)*100)/100;o.hist.push({dt:nowL(),v});o.hist=o.hist.slice(-24);
+ const p=Math.min(100,Math.floor(o.saldo/o.meta*100)),mk=[25,50,75,100].filter(m=>p>=m&&m>o.mk).pop();o.mk=Math.max(o.mk,p);save();render();
+ toast(mk==100?'🎉 Objetivo alcançado! Parabéns!':mk?'🎉 Você chegou a '+mk+'% do objetivo!':'Guardado: '+R(v))}
+/* ===== Manutenção por km (Etapa 4) ===== */
+const MANP=[['Troca de óleo',10000],['Filtro de ar',15000],['Pastilhas de freio',20000],['Pneus',40000],['Correia dentada',50000],['Outro',10000]];
+const mFalta=(c,m)=>Math.round(m.ult+m.cada-c.km),kmF=v=>Math.abs(v).toLocaleString('pt-BR');
+function manAl(){const o=[];S.cars.forEach(c=>{if(!(c.km>0))return;(c.man||[]).forEach(m=>{const f=mFalta(c,m);if(f<=500)o.push('🔧 <b>'+esc(m.nome)+' — '+esc(vn(c))+':</b> '+(f<0?'vencida há '+kmF(f)+' km':f==0?'vence agora':'vence em '+kmF(f)+' km'))})});return o}
+function manPre(){const p=MANP[+$('mnp').value]||MANP[0];$('mnn').value=p[0]=='Outro'?'':p[0];$('mni').value=p[1]}
+function man(){const e=$('manL');if(!e)return;if(!S.cars.length){e.innerHTML='<div class="emp">Cadastre um veículo para criar lembretes.</div>';return}
+ const c=car(),L=c.man||[];
+ e.innerHTML=(!(c.km>0)?'<div class="ins" style="margin-bottom:8px">💡 Informe o km atual do veículo (Editar) para os avisos funcionarem.</div>':'')
+ +(L.length?L.map(m=>{const f=mFalta(c,m),cor=f<0?'#EF4444':f<=500?'#F59E0B':'var(--ac)';
+  return '<div style="border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--ph)"><div class="cl"><b>'+esc(m.nome)+'</b><button class="mini" onclick="manDel('+m.id+')">🗑️</button></div>'
+  +'<small style="color:var(--mu)">A cada '+kmF(m.cada)+' km • última em '+kmF(m.ult)+' km</small>'
+  +'<div style="margin-top:6px;font-weight:800;color:'+cor+'">'+(c.km>0?(f<0?'⚠️ Vencida há '+kmF(f)+' km':f<=500?'⏳ Faltam '+kmF(f)+' km':'Faltam '+kmF(f)+' km (próxima aos '+kmF(m.ult+m.cada)+' km)'):'Sem km atual')+'</div>'
+  +'<button class="btn s" style="margin:8px 0 0" onclick="manOk('+m.id+')">✔ Feito agora (km atual)</button></div>'}).join(''):'<div class="emp">Nenhum lembrete. Escolha um abaixo, por exemplo troca de óleo.</div>')}
+function manAdd(){if(!S.cars.length){toast('Cadastre um veículo primeiro');return}const c=car();if(!c.man)c.man=[];
+ const nome=$('mnn').value.trim().slice(0,40),cada=Math.floor(+$('mni').value),u=$('mnu').value,ult=u===''?c.km:Math.floor(+u);
+ if(!nome){toast('Dê um nome ao lembrete');return}if(!(cada>=100&&cada<=500000)){toast('Informe o intervalo em km (100 a 500.000)');return}
+ if(!(ult>=0)||(c.km>0&&ult>c.km)){toast('A última troca não pode ser maior que o km atual');return}
+ if(c.man.length>=10){toast('Limite de 10 lembretes por veículo');return}
+ c.man.push({id:Date.now()+c.man.length,nome,cada,ult});$('mnu').value='';save();render();toast('Lembrete criado')}
+function manOk(id){const c=car(),m=(c.man||[]).find(x=>x.id==id);if(!m)return;if(!(c.km>0)){toast('Informe o km atual do veículo primeiro');return}m.ult=c.km;save();render();toast('Marcado como feito aos '+kmF(c.km)+' km')}
+function manDel(id){const c=car();if(confirm('Excluir este lembrete?')){c.man=(c.man||[]).filter(x=>x.id!=id);save();render()}}
+/* ===== Simulador "e se?" ===== */
+function obSim(id){const o=S.obj.find(x=>x.id==id),r=$('obr'+id),x=$('obx'+id);if(!o||!r||!x)return;const v=+r.value,c=obCalc(o);
+ if(!(v>0)){x.innerHTML='Mova o controle para ver quando você chega lá.';return}
+ const k=Math.ceil(c.falta/v);if(k>600){x.innerHTML='Com <b>'+R(v)+'</b>/mês levaria mais de 50 anos.';return}
+ const n=new Date(),dt=new Date(n.getFullYear(),n.getMonth()+k-1,1),df=k-c.m;
+ x.innerHTML='Guardando <b>'+R(v)+'</b>/mês você chega em <b>'+obLbl(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'))+'</b> ('+k+' mês(es)). '+(df<0?'🎉 '+(-df)+' mês(es) antes do prazo.':df>0?'⚠️ '+df+' mês(es) depois do prazo.':'✅ Dentro do prazo.')}
+function cxv(v){['dia','ct'].forEach(k=>$('cx-'+k).style.display=k==v?'':'none');document.querySelectorAll('#cxs button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
+function aplicaPerfil(){const b=document.querySelector('nav button[data-t=prof]'),pes=S.perf=='Uso pessoal';if(b)b.style.display=pes?'none':'';if(pes&&$('t-prof').classList.contains('on'))go('inicio')}
+function setPerf(p){S.perf=p;S.perfOk=true;save();$('perf').value=p;closeM();render();toast('Perfil: '+p)}
+function ajTema(){document.querySelectorAll('#ajth button').forEach(b=>b.classList.toggle('on',b.dataset.th==S.tema))}
+function setTema(t){applyTheme(t);ajTema()}
+function openAj(){$('perf').value=S.perf;ajTema();$('mAj').classList.add('on')}
 function go(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.id=='t-'+t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));scrollTo(0,0);if(t=='prof')calc()}
 function inPer(r,p){const d=new Date(r.dt),n=new Date();if(isNaN(d))return false;if(p=='sem')return n-d<=7*864e5&&d<=n;if(p=='mes')return d.getMonth()==n.getMonth()&&d.getFullYear()==n.getFullYear();return d.getFullYear()==n.getFullYear()}
 const car=()=>S.cars.find(c=>c.id==S.cur)||S.cars[0]||NOCAR,NOCAR={id:0,tipo:'carro',nome:'',km:0,ki:0,chk:[]},vn=c=>c.nome||c.mo||c.m||'Veículo',ic=c=>c.el?TI.ebike:TI[c.tipo];
@@ -305,8 +465,8 @@ function home(){
  const pos=ks.filter(k=>c[k]>0).sort((a,b)=>c[b]-c[a]);
  $('ins').innerHTML=!pos.length?'💡 Registre seu primeiro gasto para ver a análise aqui.':pos.length==1?'💡 Todo o gasto do período foi com <b>'+pos[0]+'</b>.':'💡 Seu maior gasto foi com <b>'+pos[0]+'</b> e o menor foi com <b>'+pos[pos.length-1]+'</b>.';
  const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')'})));
- $('alL').innerHTML=(ag.map(r=>'<div class="al">🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button></div>').join('')+sgAl().concat(ctAl(),plAl(),ecoAl()).map(t=>'<div class="al">'+t+'</div>').join('')+pend.map(i=>'<div class="al">⏳ <b>Pendente na oficina:</b> '+esc(i.t)+'</div>').join(''))||'<div class="emp">Nenhum alerta por enquanto.</div>';
- $('dot').style.display=(ag.length+pend.length+sgAl().length+ctAl().length+plAl().length+ecoAl().length)?'block':'none';
+ $('alL').innerHTML=(ag.map(r=>'<div class="al">🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button></div>').join('')+sgAl().concat(ctAl(),plAl(),ecoAl(),manAl(),bkAl()).map(t=>'<div class="al">'+t+'</div>').join('')+pend.map(i=>'<div class="al">⏳ <b>Pendente na oficina:</b> '+esc(i.t)+'</div>').join(''))||'<div class="emp">Nenhum alerta por enquanto.</div>';
+ $('dot').style.display=(ag.length+pend.length+sgAl().length+ctAl().length+plAl().length+ecoAl().length+manAl().length+bkAl().length)?'block':'none';
 }
 function pagar(id){const r=S.regs.find(x=>x.id==id);if(r){r.ag=false;save();render();toast('Registro marcado como pago')}}
 
@@ -382,14 +542,32 @@ function relatorio(){if(!S.cars.length){toast('Cadastre um veículo primeiro');r
  +'<h2>Pendências da oficina</h2>'+(pend.length?'<ul>'+pend.map(i=>'<li>'+esc(i.t)+'</li>').join('')+'</ul>':'<p>Nenhuma.</p>');
  try{window.print()}catch(e){toast('Abra o link direto no navegador para imprimir')}}
 
-function openBk(){$('bk').value=JSON.stringify(S);$('mBk').classList.add('on')}
-function restore(){try{const x=mig(JSON.parse($('bk').value));if(!x)throw 0;S=x;save();closeM();applyTheme(S.tema||'executivo');render();toast('Dados restaurados')}catch(e){toast('Backup inválido. Cole o texto completo.')}}
+const nReg=()=>S.cars.length+S.regs.length+S.casa.gastos.length+S.contas.itens.length+S.casa.listas.length+S.obj.length;
+function undoInfo(){try{const p=JSON.parse(localStorage.getItem(KEY+'_prev'));return p&&p.d?p:null}catch(e){return null}}
+function bkStat(){const e=$('bks'),u=S.bk.ult;if(e)e.textContent=u?'Último backup: '+new Date(u).toLocaleDateString('pt-BR')+' ('+Math.floor((Date.now()-u)/864e5)+' dia(s) atrás)':'Nenhum backup feito neste aparelho ainda.'}
+function openBk(){$('bk').value=JSON.stringify(S);bkStat();const p=undoInfo(),b=$('bkU');b.style.display=p?'':'none';if(p)b.textContent='↩️ Desfazer última restauração ('+new Date(p.em).toLocaleDateString('pt-BR')+')';$('mBk').classList.add('on')}
+function bkOk(){S.bk.ult=Date.now();S.bk.cnt=nReg();S.bk.adiar=0;save();bkStat();render()}
+function bkAdia(){S.bk.adiar=Date.now()+7*864e5;save();render()}
+function bkAgora(){if(DBR)nuvem('s');else openBk()}
+function bkAl(){const b=S.bk,n=nReg();if(n<5||Date.now()<b.adiar)return[];const d=b.ult?Math.floor((Date.now()-b.ult)/864e5):0;
+ const m=!b.ult?'Você ainda não fez backup dos seus dados.':d>=30?'Faz '+d+' dias sem backup.':n-b.cnt>=20?'Há muitos registros novos desde o último backup.':'';
+ return m?['💾 <b>Backup:</b> '+m+'<br><button class="mini" style="margin:6px 4px 0 0" onclick="bkAgora()">Fazer backup</button><button class="mini" style="margin:6px 0 0" onclick="bkAdia()">Lembrar depois</button>']:[]}
+function aplicar(raw,msg){const x=carregar(raw);if(!x)throw 0;const d=DROP;
+ try{localStorage.setItem(KEY+'_prev',JSON.stringify({em:Date.now(),d:S}))}catch(e){}
+ S=x;S.bk.ult=Date.now();S.bk.cnt=nReg();S.bk.adiar=0;save();applyTheme(S.tema||'executivo');render();toast(msg+(d?' ('+d+' item(ns) inválido(s) ignorado(s))':''))}
+function restore(){try{const t=$('bk').value;if(!t.trim()||t.length>3e6)throw 0;if(!carregar(JSON.parse(t)))throw 0;
+  if(!confirm('Substituir os dados deste aparelho pelo backup colado? Você poderá desfazer depois.'))return;
+  aplicar(JSON.parse(t),'Dados restaurados');closeM()}catch(e){toast('Backup inválido. Cole o texto completo.')}}
+function desfazer(){try{const p=undoInfo();if(!p)throw 0;if(!carregar(JSON.parse(JSON.stringify(p.d))))throw 0;
+  if(!confirm('Voltar aos dados de '+new Date(p.em).toLocaleString('pt-BR')+'?'))return;
+  const cur=S;S=carregar(JSON.parse(JSON.stringify(p.d)));try{localStorage.setItem(KEY+'_prev',JSON.stringify({em:Date.now(),d:cur}))}catch(e){}
+  save();applyTheme(S.tema||'executivo');render();closeM();toast('Dados anteriores restaurados')}catch(e){toast('Não há cópia anterior para voltar.')}}
 
 function voz(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;openRec('o');
  if(!SR){toast('Seu navegador não tem ditado por voz. Preencha à mão.');return}
  try{const r=new SR();r.lang='pt-BR';r.onresult=e=>{const s=e.results[0][0].transcript,n=s.match(/\d+[.,]?\d*/);$('rds').value=s;if(n&&!$('rp').value)$('rp').value=n[0].replace(',','.');toast('Confira os dados ditados')};r.onerror=()=>toast('Não consegui ouvir. Tente de novo.');r.start();toast('🎙️ Fale agora: serviço e valor')}catch(e){toast('Não foi possível usar o microfone')}}
 
-function render(){home();hist();chk();calc();casa();contas();plano()}
+function render(){home();hist();chk();man();calc();casa();contas();plano();aplicaPerfil()}
 applyTheme(S.tema||(matchMedia('(prefers-color-scheme: dark)').matches?'noturno':'executivo'));
 const CC=['Mercado','Lanche na rua','Transporte','Lazer','Saúde','Outros'],cmes=dt=>inM(dt,0),LA=()=>S.casa.listas.find(l=>l.id==cl);
 let cl=null;
@@ -438,7 +616,7 @@ function gMes(off){let v=0,ca=0,ct=0;S.regs.forEach(r=>{if(!r.ag&&inM(r.dt,off))
  const k=mK(off);S.contas.itens.forEach(b=>{if(b.pg[k])ct+=+(b.vm&&b.vm[k]!=null?b.vm[k]:b.valor)||0});return{v,ca,ct,t:v+ca+ct}}
 function plRenda(){const p=S.plano,k=mesK();return(+p.sal||0)+p.extras.reduce((a,e)=>a+(e.fr=='semanal'?e.v*52/12:e.fr=='mensal'?e.v:(e.mk==k?e.v:0)),0)}
 const plPend=()=>cRows().filter(x=>!x.pago).reduce((a,x)=>a+(+x.v||0),0);
-function plCalc(){const p=S.plano,r=plRenda(),c=gMes(0),b=gMes(1),pend=plPend(),gu=r*p.gu/100,iv=r*p.iv/100,lim=r-gu-iv,us=c.t+pend,livre=lim-us,sobra=r-us;
+function plCalc(){obRender();const p=S.plano,r=plRenda(),c=gMes(0),b=gMes(1),pend=plPend(),gu=r*p.gu/100,iv=r*p.iv/100,lim=r-gu-iv,us=c.t+pend,livre=lim-us,sobra=r-us;
  $('pgx').innerHTML='Gastar: <b>'+(100-p.gu-p.iv)+'%</b> ('+R(lim)+') • Guardar: <b>'+R(gu)+'</b> • Investir: <b>'+R(iv)+'</b>';
  $('plT').textContent='📊 Plano de '+new Date().toLocaleDateString('pt-BR',{month:'long'});
  if(r<=0){$('plR').innerHTML='<div class="emp">Informe seu salário ou um ganho extra para ver o plano do mês.</div>';return}
@@ -447,6 +625,7 @@ function plCalc(){const p=S.plano,r=plRenda(),c=gMes(0),b=gMes(1),pend=plPend(),
  +'<div style="height:12px;border-radius:8px;background:var(--bd);overflow:hidden;margin:8px 0"><div style="height:100%;width:'+pc+'%;background:'+(us>lim?'#EF4444':us>lim*.9?'#F59E0B':'var(--ac)')+'"></div></div>'
  +'<div class="ins">'+(livre>=0?'✅ Você ainda pode gastar <b>'+R(livre)+'</b> sem sair do plano.':'⚠️ Você passou <b>'+R(-livre)+'</b> do limite de gastos do plano.')+'</div>'
  +'<div class="ins" style="margin-top:8px">🌱 Sobra projetada: <b>'+R(sobra)+'</b>. '+(sobra>=gu+iv?'Dá para guardar '+R(gu)+' e investir '+R(iv)+'.':'Faltam <b>'+R(gu+iv-sobra)+'</b> para cumprir guardar e investir.')+'</div>'
+ +(S.obj.length?'<div class="ins" style="margin-top:8px">🎯 Seus objetivos pedem <b>'+R(obTot().need)+'</b> por mês. Você reservou <b>'+R(gu)+'</b> para guardar.</div>':'')
  +'<div class="ct" style="margin-top:14px">Comparado ao mês passado</div>'+[['🚘 Veículos','v'],['🏠 Casa','ca'],['💳 Contas','ct']].map(([n,k])=>'<div class="cl"><span>'+n+'</span><span>'+R(c[k])+' <small>('+(b[k]>0?(c[k]>b[k]?'▲ ':'▼ ')+R(Math.abs(c[k]-b[k])):'sem base')+')</small></span></div>').join('')}
 function plPct(){const g=Math.max(0,+$('pgu').value||0),i=Math.max(0,+$('pin').value||0);if(g+i>100){toast('Guardar e investir somam no máximo 100%');return}S.plano.gu=g;S.plano.iv=i;save();plCalc();home()}
 function plSal(){S.plano.sal=+$('ps').value||0;save();plCalc();home()}
@@ -476,11 +655,11 @@ function openCsv(){const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
 let DLD=null,DBR=null;
 async function cap(n){try{return window.claude?await claude.use(n):null}catch(e){return null}}
 async function saveFile(name,data){if(!DLD){toast('Salvar arquivo não está disponível aqui. Use Copiar.');return}
- try{await DLD.save({filename:name,data:name.endsWith('.csv')?'\ufeff'+data:data})}catch(e){if(!e||e.code!='declined')toast('Não foi possível salvar o arquivo')}}
+ try{await DLD.save({filename:name,data:name.endsWith('.csv')?'\ufeff'+data:data});if(name=='backup-autogestor.json')bkOk()}catch(e){if(!e||e.code!='declined')toast('Não foi possível salvar o arquivo')}}
 async function nuvem(m){if(!DBR){toast('Nuvem indisponível nesta conta');return}
- try{if(m=='s'){const j=JSON.stringify(S);if(j.length>240000){toast('Dados grandes demais para a nuvem. Use o arquivo de backup.');return}await DBR.set({json:j,at:Date.now()});$('nvs').textContent='Salvo na nuvem em '+new Date().toLocaleString('pt-BR');toast('Backup salvo na nuvem')}
+ try{if(m=='s'){const j=JSON.stringify(S);if(j.length>240000){toast('Dados grandes demais para a nuvem. Use o arquivo de backup.');return}await DBR.set({json:j,at:Date.now()});$('nvs').textContent='Salvo na nuvem em '+new Date().toLocaleString('pt-BR');toast('Backup salvo na nuvem');bkOk()}
  else{const s=await DBR.get();if(!s.exists){toast('Ainda não há backup na nuvem');return}
-  if(!confirm('Substituir os dados deste aparelho pelo backup da nuvem?'))return;const x=mig(JSON.parse(s.data().json));if(!x)throw 0;S=x;save();applyTheme(S.tema||'executivo');render();toast('Dados restaurados da nuvem')}}
+  if(!confirm('Substituir os dados deste aparelho pelo backup da nuvem?'))return;aplicar(JSON.parse(s.data().json),'Dados restaurados da nuvem')}}
  catch(e){toast('Não foi possível usar a nuvem agora')}}
 cap('downloads').then(d=>{DLD=d;if(d)document.querySelectorAll('.dlb').forEach(b=>b.style.display='')});
 Promise.all([cap('db'),cap('user')]).then(async([db,u])=>{try{const id=u&&await u.id();if(!db||!id)return;DBR=db.doc('data/users/'+id+'/backup');$('nv').style.display='';$('nvs').textContent='Pronto para salvar a primeira cópia.'}catch(e){}});
@@ -493,7 +672,7 @@ function vsR(){const y=new Date().getFullYear();
   const g=S.regs.filter(r=>!r.ag&&L.some(c=>c.id==r.vid)&&new Date(r.dt).getFullYear()==y).reduce((a,r)=>a+tot(r),0);
   return '<button class="btn s" style="display:flex;justify-content:space-between" data-t="'+t+'" onclick="tgCat(this.dataset.t)"><span>'+i+' '+n+' ('+L.length+')</span><span>'+R(g)+' no ano</span></button>'
   +(vopen==t?L.map(c=>'<button class="btn '+(c.id==S.cur?'':'s')+'" style="margin:4px 0 4px 14px;width:calc(100% - 14px)" onclick="setV('+c.id+')">'+ic(c)+esc(vn(c))+'</button>').join(''):'')}).join('')||'<div class="emp">Nenhum veículo ainda.</div>'}
-function limpar(){if(confirm('Apagar TODOS os dados deste aparelho?')&&confirm('Tem certeza? Não dá para desfazer, a menos que você tenha um backup.')){S=Object.assign({},S,{cars:[],cur:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]}});save();render();go('inicio');toast('Dados apagados')}}
+function limpar(){if(confirm('Apagar TODOS os dados deste aparelho?')&&confirm('Tem certeza? Não dá para desfazer, a menos que você tenha um backup.')){S=Object.assign({},S,{cars:[],cur:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},obj:[]});try{localStorage.removeItem(KEY+'_prev')}catch(e){}save();render();go('inicio');toast('Dados apagados')}}
 function vsub(p){document.querySelectorAll('.vp').forEach(e=>e.style.display=e.id=='vp-'+p?'':'none');document.querySelectorAll('#vsub button').forEach(b=>b.classList.toggle('on',b.dataset.p==p))}
 function fn(){const s=car().fin,e=$('fn');
  if(!s){e.innerHTML='<div class="ct">🏦 Financiamento</div><button class="btn s" style="margin:0" onclick="openFn()">+ Adicionar financiamento</button>';return}
@@ -514,8 +693,11 @@ function pgFn(i,vid){const c=vid?S.cars.find(x=>x.id==vid):car(),s=c&&c.fin;if(!
 new MutationObserver(()=>document.documentElement.classList.toggle('lock',!!document.querySelector('.mo.on'))).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
 document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('lock')&&!(e.target.closest&&e.target.closest('.mb')))e.preventDefault()},{passive:false});
 $('gc').innerHTML=CC.map(c=>'<option>'+c+'</option>').join('');
+$('mnp').innerHTML=MANP.map((p,i)=>'<option value="'+i+'">'+p[0]+'</option>').join('');manPre();
+$('obi').innerHTML=OBI.map(i=>'<option value="'+i+'">'+i+' '+OBN[i]+'</option>').join('');$('obo').innerHTML=OBO.map(i=>'<option>'+i+'</option>').join('');
 $('sp').innerHTML=Array.from({length:12},(_,i)=>'<option>'+(i+1)+'</option>').join('');
 render();
+if(!S.perfOk)$('mWel').classList.add('on');
 </script>
 </body>
 </html>
