@@ -151,6 +151,7 @@ html.lock,html.lock body{overflow:hidden}
   <div class="seg" id="ltS" style="margin:10px 0 8px"><button class="on" data-v="compra" onclick="ltSet('compra')">🛒 Lista de compras</button><button data-v="servico" onclick="ltSet('servico')">🧹 Serviço doméstico</button></div>
   <input id="ln" maxlength="60" placeholder="Nome da lista (ex.: Mercado, Farmácia)">
   <button class="btn s" id="ladd" onclick="addL('casa')">+ Criar lista</button><div id="lB"></div></div>
+  <div class="card"><div class="ct">🧾 Compras finalizadas</div><div id="cpL"></div></div>
  </div>
  <div id="cx-ct" style="display:none">
  <div class="card"><div class="big"><small id="ctM"></small><h2 id="ctT"></h2></div><div class="g2"><div class="kpi"><span>✔ Pago</span><strong id="ctP"></strong></div><div class="kpi"><span>⏳ A pagar</span><strong id="ctA"></strong></div></div></div>
@@ -268,6 +269,16 @@ html.lock,html.lock body{overflow:hidden}
  <small style="color:var(--mu);display:block;margin-top:10px">Valores informados por você, sem rendimento. É uma ajuda de organização, não consultoria financeira.</small>
 </div></div>
 
+<div class="mo" id="mFin"><div class="mb">
+ <div class="mh"><span>✅ Finalizar compra</span><button class="ib" onclick="closeM()">✖</button></div>
+ <small id="fnI" style="color:var(--mu);display:block;margin-top:6px"></small>
+ <label>Total pago (R$)</label><input id="fnT" type="number" inputmode="decimal" step="0.01" placeholder="Valor do cupom">
+ <label>Mercado (opcional)</label><input id="fnL" maxlength="60" placeholder="Ex.: Atacadão">
+ <label>Data</label><input id="fnD" type="date">
+ <button class="btn" onclick="finSave()">Concluir compra</button>
+ <small style="color:var(--mu);display:block;line-height:1.4">A lista vai para o histórico de compras e o valor entra no gasto da casa. Vale o total pago; o preço de cada item é só um apoio. Se você já anotou esta compra em "Gasto do dia a dia", não some de novo.</small>
+</div></div>
+
 <div class="mo" id="mRel"><div class="mb">
  <div class="mh"><span>📄 Relatório de despesas</span><button class="ib" onclick="closeM()">✖</button></div>
  <label>O que incluir</label><select id="rlS"></select>
@@ -326,11 +337,11 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const R=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const KEY='agp1',TH=['executivo','noturno','facil'],NM={c:'Abastecimento',o:'Oficina',i:'IPVA / taxas',s:'Seguro',f:'Financiamento'},IC={c:'⛽',o:'🔧',i:'📄',s:'🛡️',f:'🏦'};
 const COL=['#10B981','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#14B8A6'],TI={carro:'🚘 ',moto:'🏍️ ',bike:'🚲 ',ebike:'⚡🚲 '};
-let S={v:6,cars:[],cur:null,perf:'Uso pessoal',tema:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[]};
+let S={v:6,cars:[],cur:null,perf:'Uso pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[]};
 function mig(x){if(!x||typeof x!='object')return null;if(x.car&&!x.cars){x.cars=[Object.assign({id:1,tipo:'carro'},x.car)];x.cur=1;(x.regs||[]).forEach(r=>{r.vid=1});delete x.car}
  if(!Array.isArray(x.cars)||!Array.isArray(x.regs))return null;x.v=2;x.regs.forEach(r=>{if(!r.vid&&x.cars[0])r.vid=x.cars[0].id});if(!x.cars.some(c=>c.id==x.cur))x.cur=x.cars.length?x.cars[0].id:null;
  x.chk=x.chk||{};x.chk.oficina=x.chk.oficina||[];
- if(!x.casa){x.casa={listas:[],gastos:[]};[['compras','Compras de casa','compra'],['diario','Tarefas do dia','servico']].forEach(([k,n,tp])=>{if(x.chk[k]&&x.chk[k].length)x.casa.listas.push({id:Date.now()+x.casa.listas.length,nome:n,tipo:tp,itens:x.chk[k].map(i=>({t:i.t,d:!!i.d,p:0,dt:''}))});delete x.chk[k]})}
+ if(!x.casa){x.casa={listas:[],gastos:[],compras:[]};[['compras','Compras de casa','compra'],['diario','Tarefas do dia','servico']].forEach(([k,n,tp])=>{if(x.chk[k]&&x.chk[k].length)x.casa.listas.push({id:Date.now()+x.casa.listas.length,nome:n,tipo:tp,itens:x.chk[k].map(i=>({t:i.t,d:!!i.d,p:0,dt:''}))});delete x.chk[k]})}
  if(!x.contas)x.contas={itens:[]};if(!x.plano)x.plano={sal:0,gu:10,iv:10,extras:[]};x.cars.forEach((c,i)=>{if(c.tipo=='ebike'){c.tipo='bike';c.el=true}if(!c.nome)c.nome=c.mo||c.m||'Veículo';if(!c.chk)c.chk=i==0?x.chk.oficina.slice():[]});delete x.chk;x.v=6;return Object.assign({},S,x)}
 /* ===== Validação e carga segura (Etapa 1) ===== */
 const OBI=['🚗','✈️','🏠','🛡️','🎯'],OBN={'🚗':'Veículo','✈️':'Viagem','🏠':'Casa','🛡️':'Reserva de emergência','🎯':'Outro sonho'},OBO=['Poupança','Nubank','Inter','Mercado Pago','Outro'];
@@ -348,7 +359,7 @@ function carregar(raw){
  if(w.cars){const n=w.cars.length;w.cars=arO(w.cars);DROP+=n-w.cars.length}
  if(w.regs){const n=w.regs.length;w.regs=arO(w.regs);DROP+=n-w.regs.length}
  const x=mig(w);if(!x)return null;
- const out={v:6,cars:[],cur:x.cur,perf:'Uso pessoal',tema:TH.includes(x.tema)?x.tema:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[]};
+ const out={v:6,cars:[],cur:x.cur,perf:'Uso pessoal',tema:TH.includes(x.tema)?x.tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[]};
  const PF=[...$('perf').options].map(o=>o.value);if(PF.includes(x.perf))out.perf=x.perf;out.perfOk=false;
  const dt=/^\d{4}-\d{2}-\d{2}$/;
  x.cars.forEach(c=>{
@@ -365,6 +376,8 @@ function carregar(raw){
  const ca=isO(x.casa)?x.casa:{};
  arO(ca.listas).forEach(l=>{l.id=nm(l.id,Date.now()+out.casa.listas.length);l.nome=String(l.nome==null?'':l.nome);l.tipo=l.tipo=='compra'?'compra':l.tipo=='trabalho'?'trabalho':'servico';
   l.itens=arO(l.itens).map(i=>({t:String(i.t==null?'':i.t).slice(0,200),d:!!i.d,p:nm(i.p),dt:String(i.dt==null?'':i.dt)}));out.casa.listas.push(l)});
+ arO(ca.compras).forEach(c=>{const t=nm(c.total),d=String(c.dt==null?'':c.dt);if(!(t>0)||!/^\d{4}-\d{2}-\d{2}/.test(d)||out.casa.compras.length>=1000){DROP++;return}
+  out.casa.compras.push({id:nm(c.id,Date.now()+out.casa.compras.length),dt:d.slice(0,10)+'T'+(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(d)?d.slice(11,16):'12:00'),local:String(c.local==null?'':c.local).slice(0,60),nome:String(c.nome==null?'':c.nome).slice(0,60),total:t,itens:arO(c.itens).slice(0,200).map(i=>({t:String(i.t==null?'':i.t).slice(0,120),p:nm(i.p)}))})});
  arO(ca.gastos).forEach(g=>{g.id=nm(g.id,Date.now()+out.casa.gastos.length);g.p=nm(g.p);g.d=String(g.d==null?'':g.d);g.cat=String(g.cat==null?'':g.cat);g.dt=String(g.dt==null?'':g.dt);out.casa.gastos.push(g)});
  const co=isO(x.contas)?x.contas:{};
  arO(co.itens).forEach(b=>{b.id=nm(b.id,Date.now()+out.contas.itens.length);b.nome=String(b.nome==null?'':b.nome);b.dia=Math.min(31,Math.max(1,Math.floor(nm(b.dia,1))));b.valor=nm(b.valor);if(!isO(b.pg))b.pg={};if(!isO(b.vm))b.vm={};out.contas.itens.push(b)});
@@ -560,6 +573,7 @@ function relRows(){const a=[],vn2=id=>{const c=S.cars.find(x=>x.id==id);return c
   a.push({dt:ok(String(r.dt).slice(0,10)),area:'v',vid:r.vid,item:r.d||NM[r.t],local:r.l||'',cat:parts.filter(x=>x[1]).map(x=>x[0]).join(' + ')||NM[r.t],parts,val:p+m})});
  S.casa.gastos.forEach(g=>{const v=+g.p||0;a.push({dt:ok(String(g.dt).slice(0,10)),area:'c',item:g.d,local:'',cat:g.cat||'Outros',parts:[[g.cat||'Outros',v]],val:v})});
  S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.forEach(i=>{if(i.d&&i.dt){const v=+i.p||0;a.push({dt:ok(String(i.dt).slice(0,10)),area:'c',item:i.t,local:l.nome,cat:'Compras (listas)',parts:[['Compras (listas)',v]],val:v})}}));
+ S.casa.compras.forEach(c=>a.push({dt:ok(c.dt.slice(0,10)),area:'c',item:'Compra — '+c.nome,local:c.local,cat:'Compras (listas)',parts:[['Compras (listas)',c.total]],val:c.total}));
  S.contas.itens.forEach(b=>Object.keys(b.pg).forEach(k=>{const v=+(b.vm&&b.vm[k]!=null?b.vm[k]:b.valor)||0,y=+k.slice(0,4),m=+k.slice(5,7),dia=Math.min(b.dia||1,new Date(y,m,0).getDate());
   a.push({dt:ok(k+'-'+String(dia).padStart(2,'0')),area:'c',item:b.nome,local:'',cat:'Contas fixas — '+(CT_N[b.tipo]||'Outra conta'),parts:[['Contas fixas — '+(CT_N[b.tipo]||'Outra conta'),v]],val:v})}));
  return a.sort((x,y)=>x.dt<y.dt?-1:x.dt>y.dt?1:0)}
@@ -593,7 +607,7 @@ function relGerar(){const sc=$('rlS').value,per=relPer,det=relDet;let pf='',pl='
  h+='<div class="foot">Relatório de controle pessoal, gerado a partir de lançamentos informados pelo usuário (apenas gastos já pagos). Não substitui notas fiscais, recibos ou orientação de um contador. AutoGestor Pro • emitido em '+new Date().toLocaleDateString('pt-BR')+'</div>';
  $('rep').innerHTML=h;closeM();try{window.print()}catch(e){toast('Abra o link direto no navegador para imprimir')}}
 
-const nReg=()=>S.cars.length+S.regs.length+S.casa.gastos.length+S.contas.itens.length+S.casa.listas.length+S.obj.length;
+const nReg=()=>S.cars.length+S.regs.length+S.casa.gastos.length+S.contas.itens.length+S.casa.listas.length+S.casa.compras.length+S.obj.length;
 function undoInfo(){try{const p=JSON.parse(localStorage.getItem(KEY+'_prev'));return p&&p.d?p:null}catch(e){return null}}
 function bkStat(){const e=$('bks'),u=S.bk.ult;if(e)e.textContent=u?'Último backup: '+new Date(u).toLocaleDateString('pt-BR')+' ('+Math.floor((Date.now()-u)/864e5)+' dia(s) atrás)':'Nenhum backup feito neste aparelho ainda.'}
 function openBk(){$('bk').value=JSON.stringify(S);bkStat();const p=undoInfo(),b=$('bkU');b.style.display=p?'':'none';if(p)b.textContent='↩️ Desfazer última restauração ('+new Date(p.em).toLocaleDateString('pt-BR')+')';$('mBk').classList.add('on')}
@@ -657,13 +671,33 @@ function lstR(ar){const I=LID[ar],L=lsOf(ar),ce=$(I.c),be=$(I.B);if(!ce||!be)ret
      :'<input type="number" inputmode="decimal" step="0.01" placeholder="R$" value="'+(i.p||'')+'" style="width:84px;padding:7px" onclick="event.stopPropagation()" onchange="pI('+m+',this.value)">')
    +'<button class="mini" aria-label="Apagar" onclick="event.stopPropagation();dlI('+q+','+m+')">🗑️</button></div>'}).join(''):'<div class="emp">'+(sv?'Sem etapas. Digite a primeira etapa e toque em +.':'Lista vazia. Digite o primeiro item e toque em +.')+'</div>')+'</div>';
  if(sv&&k)h+='<button class="btn s" onclick="rsL('+q+')">↺ Reiniciar etapas</button>';
+ if(!sv&&n)h+='<button class="btn" onclick="openFin()">✅ Finalizar compra</button>';
  h+='<button class="btn s" onclick="delL('+q+')">🗑️ Apagar '+(sv?'este serviço':'esta lista')+'</button>';
  be.innerHTML=h}
-function casaT(){let cp=0;S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.forEach(i=>{if(i.d&&cmes(i.dt))cp+=+i.p||0}));
+/* ===== Compras finalizadas ===== */
+let cpOpen=null;
+function openFin(){const l=LA('casa');if(!l||l.tipo!='compra'||!l.itens.length){toast('Adicione itens à lista primeiro');return}
+ const mk=l.itens.filter(i=>i.d),base=mk.length?mk:l.itens,sug=base.reduce((a,i)=>a+(+i.p||0),0);
+ $('fnT').value=sug>0?sug.toFixed(2):'';$('fnL').value='';$('fnD').value=nowL().slice(0,10);
+ $('fnI').textContent=mk.length?mk.length+' de '+l.itens.length+' itens marcados. Os não marcados não entram no histórico.':'Nenhum item marcado: os '+l.itens.length+' itens serão guardados.';$('mFin').classList.add('on')}
+function finSave(){const l=LA('casa'),t=+$('fnT').value,d=$('fnD').value;if(!l||l.tipo!='compra')return;
+ if(!(t>0&&t<=1e7)){toast('Informe o valor total pago');return}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast('Escolha a data');return}if(d>nowL().slice(0,10)){toast('A data não pode ser futura');return}
+ const mk=l.itens.filter(i=>i.d),base=mk.length?mk:l.itens;
+ S.casa.compras.unshift({id:Date.now(),dt:d+'T12:00',local:$('fnL').value.trim().slice(0,60),nome:l.nome,total:Math.round(t*100)/100,itens:base.map(i=>({t:i.t,p:+i.p||0}))});
+ S.casa.listas=S.casa.listas.filter(x=>x.id!=l.id);cl=null;save();closeM();render();toast('Compra de '+R(t)+' guardada no histórico')}
+function cpTg(id){cpOpen=cpOpen==id?null:id;cpR()}
+function cpDel(id){if(confirm('Apagar esta compra do histórico? O valor sai do total do mês.')){S.casa.compras=S.casa.compras.filter(c=>c.id!=id);if(cpOpen==id)cpOpen=null;save();render()}}
+function cpR(){const e=$('cpL');if(!e)return;const L=S.casa.compras.slice().sort((a,b)=>a.dt<b.dt?1:a.dt>b.dt?-1:0),mm=L.filter(c=>cmes(c.dt));
+ e.innerHTML=L.length?'<div class="ins" style="margin-bottom:8px">Neste mês: <b>'+R(mm.reduce((a,c)=>a+c.total,0))+'</b> em '+mm.length+' compra(s)</div>'
+  +L.slice(0,20).map(c=>'<div class="it" onclick="cpTg('+c.id+')" style="cursor:pointer"><div class="b"><div class="t"><span>'+esc(c.nome)+(c.local?' — '+esc(c.local):'')+'</span><span>'+R(c.total)+'</span></div><small>'+dBR(c.dt)+' • '+c.itens.length+' item(ns)</small>'
+   +(cpOpen==c.id?'<div style="margin-top:6px;font-size:calc(12px*var(--fs))">'+(c.itens.map(i=>esc(i.t)+(i.p>0?' ('+R(i.p)+')':'')).join(', ')||'Sem itens')+'</div>':'')+'</div><button class="mini" aria-label="Apagar" onclick="event.stopPropagation();cpDel('+c.id+')">🗑️</button></div>').join('')
+  +(L.length>20?'<small style="color:var(--mu)">Mostrando as 20 mais recentes. O relatório de despesas inclui todas.</small>':''):'<div class="emp">Nenhuma compra finalizada ainda. Na sua lista de compras, toque em "Finalizar compra" e informe o total pago.</div>'}
+function casaT(){let cp=0;S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.forEach(i=>{if(i.d&&cmes(i.dt))cp+=+i.p||0}));S.casa.compras.forEach(c=>{if(cmes(c.dt))cp+=c.total});
  const dd=S.casa.gastos.filter(g=>cmes(g.dt)).reduce((a,g)=>a+(+g.p||0),0);
  $('czT').textContent=R(cp+dd);$('czC').textContent=R(cp);$('czG').textContent=R(dd);
  const l=LA('casa'),e=$('lTot');if(l&&e&&l.tipo=='compra'){const k=l.itens.filter(i=>i.d);e.innerHTML='🛒 Gasto desta lista: <b>'+R(k.reduce((a,i)=>a+(+i.p||0),0))+'</b> • '+k.length+' de '+l.itens.length+' comprados'}}
-function casa(){lstR('casa');
+function casa(){lstR('casa');cpR();
  $('gL').innerHTML=S.casa.gastos.slice(0,20).map(g=>'<div class="it"><div class="b"><div class="t"><span>'+esc(g.d)+'</span><span>'+R(g.p)+'</span></div><small>'+esc(g.cat)+' • '+fd(g.dt)+'</small></div><button class="mini" onclick="delG('+g.id+')">🗑️</button></div>').join('')||'<div class="emp">Nenhum gasto ainda. Anote o primeiro acima.</div>';
  casaT()}
 const CI={cartao:'💳',agua:'💧',luz:'💡',internet:'🌐',outro:'📌'};
@@ -688,7 +722,7 @@ function ctAl(){const n=new Date(),o=[];S.contas.itens.forEach(b=>{if(b.pg[mesK(
 function inM(dt,off){const d=new Date(dt),n=new Date(),t=new Date(n.getFullYear(),n.getMonth()-off,1);return !isNaN(d)&&d.getMonth()==t.getMonth()&&d.getFullYear()==t.getFullYear()}
 function mK(off){const t=new Date(new Date().getFullYear(),new Date().getMonth()-off,1);return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')}
 function gMes(off){let v=0,ca=0,ct=0;S.regs.forEach(r=>{if(!r.ag&&inM(r.dt,off))v+=tot(r)});
- S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.forEach(i=>{if(i.d&&inM(i.dt,off))ca+=+i.p||0}));S.casa.gastos.forEach(g=>{if(inM(g.dt,off))ca+=+g.p||0});
+ S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.forEach(i=>{if(i.d&&inM(i.dt,off))ca+=+i.p||0}));S.casa.compras.forEach(c=>{if(inM(c.dt,off))ca+=c.total});S.casa.gastos.forEach(g=>{if(inM(g.dt,off))ca+=+g.p||0});
  const k=mK(off);S.contas.itens.forEach(b=>{if(b.pg[k])ct+=+(b.vm&&b.vm[k]!=null?b.vm[k]:b.valor)||0});return{v,ca,ct,t:v+ca+ct}}
 function plRenda(){const p=S.plano,k=mesK();return(+p.sal||0)+p.extras.reduce((a,e)=>a+(e.fr=='semanal'?e.v*52/12:e.fr=='mensal'?e.v:(e.mk==k?e.v:0)),0)}
 const plPend=()=>cRows().filter(x=>!x.pago).reduce((a,x)=>a+(+x.v||0),0);
@@ -724,6 +758,7 @@ function csvRows(){const a=[],nm=id=>{const c=S.cars.find(x=>x.id==id);return c?
  S.regs.forEach(r=>{if(!r.ag)a.push([r.dt.slice(0,10),'Veículo — '+nm(r.vid),r.d||NM[r.t],r.l||'',tot(r)])});
  S.casa.gastos.forEach(g=>a.push([g.dt.slice(0,10),'Casa',g.d,g.cat,+g.p||0]));
  S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.forEach(i=>{if(i.d&&i.dt)a.push([i.dt.slice(0,10),'Casa (compra)',i.t,l.nome,+i.p||0])}));
+ S.casa.compras.forEach(c=>a.push([c.dt.slice(0,10),'Casa (compra finalizada)',c.nome,c.local,c.total]));
  S.contas.itens.forEach(b=>Object.keys(b.pg).forEach(k=>a.push([k+'-01','Contas',b.nome,b.tipo,+(b.vm&&b.vm[k]!=null?b.vm[k]:b.valor)||0])));
  return a.sort((x,y)=>x[0]<y[0]?-1:1)}
 function openCsv(){const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
@@ -748,7 +783,7 @@ function vsR(){const y=new Date().getFullYear();
   const g=S.regs.filter(r=>!r.ag&&L.some(c=>c.id==r.vid)&&new Date(r.dt).getFullYear()==y).reduce((a,r)=>a+tot(r),0);
   return '<button class="btn s" style="display:flex;justify-content:space-between" data-t="'+t+'" onclick="tgCat(this.dataset.t)"><span>'+i+' '+n+' ('+L.length+')</span><span>'+R(g)+' no ano</span></button>'
   +(vopen==t?L.map(c=>'<button class="btn '+(c.id==S.cur?'':'s')+'" style="margin:4px 0 4px 14px;width:calc(100% - 14px)" onclick="setV('+c.id+')">'+ic(c)+esc(vn(c))+'</button>').join(''):'')}).join('')||'<div class="emp">Nenhum veículo ainda.</div>'}
-function limpar(){if(confirm('Apagar TODOS os dados deste aparelho?')&&confirm('Tem certeza? Não dá para desfazer, a menos que você tenha um backup.')){S=Object.assign({},S,{cars:[],cur:null,regs:[],casa:{listas:[],gastos:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},obj:[]});try{localStorage.removeItem(KEY+'_prev')}catch(e){}save();render();go('inicio');toast('Dados apagados')}}
+function limpar(){if(confirm('Apagar TODOS os dados deste aparelho?')&&confirm('Tem certeza? Não dá para desfazer, a menos que você tenha um backup.')){S=Object.assign({},S,{cars:[],cur:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},obj:[]});try{localStorage.removeItem(KEY+'_prev')}catch(e){}save();render();go('inicio');toast('Dados apagados')}}
 function vsub(p){document.querySelectorAll('.vp').forEach(e=>e.style.display=e.id=='vp-'+p?'':'none');document.querySelectorAll('#vsub button').forEach(b=>b.classList.toggle('on',b.dataset.p==p))}
 function fn(){const s=car().fin,e=$('fn');
  if(!s){e.innerHTML='<div class="ct">🏦 Financiamento</div><button class="btn s" style="margin:0" onclick="openFn()">+ Adicionar financiamento</button>';return}
