@@ -147,11 +147,12 @@ html.lock,html.lock body{overflow:hidden}
   <input id="gd" placeholder="Ex.: lanche, padaria, uber…">
   <div class="row" style="margin-top:8px"><input id="gp" type="number" inputmode="decimal" step="0.01" placeholder="Valor (R$)"><select id="gc"></select></div>
   <button class="btn" onclick="addG()">Registrar gasto</button><div id="gL" style="margin-top:8px"></div></div>
- <div class="card"><div class="ct">📋 Minhas listas</div><div class="chips" id="lc"></div>
-  <div class="seg" id="ltS" style="margin:10px 0 8px"><button class="on" data-v="compra" onclick="ltSet('compra')">🛒 Lista de compras</button><button data-v="servico" onclick="ltSet('servico')">🧹 Serviço doméstico</button></div>
+ <div class="card"><div class="ct">📋 Minhas listas</div>
+  <div class="seg" id="ltS" style="margin:0 0 8px"><button class="on" data-v="compra" onclick="ltSet('compra')">🛒 Lista de compras</button><button data-v="servico" onclick="ltSet('servico')">🧹 Serviço doméstico</button></div>
+  <div class="chips" id="lc"></div>
   <input id="ln" maxlength="60" placeholder="Nome da lista (ex.: Mercado, Farmácia)">
   <button class="btn s" id="ladd" onclick="addL('casa')">+ Criar lista</button><div id="lB"></div></div>
-  <div class="card"><div class="ct">🧾 Compras finalizadas</div><div id="cpL"></div></div>
+  <div class="card" id="cpC"><div class="ct">🧾 Compras finalizadas</div><div id="cpL"></div></div>
  </div>
  <div id="cx-ct" style="display:none">
  <div class="card"><div class="big"><small id="ctM"></small><h2 id="ctT"></h2></div><div class="g2"><div class="kpi"><span>✔ Pago</span><strong id="ctP"></strong></div><div class="kpi"><span>⏳ A pagar</span><strong id="ctA"></strong></div></div></div>
@@ -635,17 +636,17 @@ function voz(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
 function render(){home();hist();chk();man();calc();casa();lstR('trab');contas();plano();aplicaPerfil()}
 applyTheme(S.tema||(matchMedia('(prefers-color-scheme: dark)').matches?'noturno':'executivo'));
 const CC=['Mercado','Lanche na rua','Transporte','Lazer','Saúde','Outros'],cmes=dt=>inM(dt,0);
-let cl=null,tl=null,ltp='compra',itEd=null;
+const CL={compra:null,servico:null};let tl=null,ltp='compra',itEd=null;
 function addG(){const d=$('gd').value.trim(),p=+$('gp').value||0;if(!d||p<=0){toast('Informe a descrição e o valor');return}S.casa.gastos.unshift({id:Date.now(),dt:nowL(),cat:$('gc').value,d,p});$('gd').value='';$('gp').value='';save();casa()}
 function delG(id){S.casa.gastos=S.casa.gastos.filter(g=>g.id!=id);save();casa()}
 const LID={casa:{c:'lc',n:'ln',i:'li',B:'lB',T:'lTot'},trab:{c:'tsc',n:'tsn',i:'tsi',B:'tsB',T:'tsTot'}};
-const lsOf=ar=>S.casa.listas.filter(l=>ar=='trab'?l.tipo=='trabalho':l.tipo!='trabalho'),selOf=ar=>ar=='trab'?tl:cl,LA=ar=>lsOf(ar||'casa').find(l=>l.id==selOf(ar||'casa'));
+const lsOf=ar=>S.casa.listas.filter(l=>ar=='trab'?l.tipo=='trabalho':l.tipo==ltp),selOf=ar=>ar=='trab'?tl:CL[ltp],LA=ar=>lsOf(ar||'casa').find(l=>l.id==selOf(ar||'casa'));
 function lstUp(ar){save();if(ar=='trab')lstR('trab');else casa()}
-function ltSet(v){ltp=v;document.querySelectorAll('#ltS button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));$('ln').placeholder=v=='compra'?'Nome da lista (ex.: Mercado, Farmácia)':'Nome do serviço (ex.: Limpar o jardim)';$('ladd').textContent=v=='compra'?'+ Criar lista':'+ Criar serviço'}
+function ltSet(v){ltp=v;document.querySelectorAll('#ltS button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));$('ln').placeholder=v=='compra'?'Nome da lista (ex.: Mercado, Farmácia)':'Nome do serviço (ex.: Limpar o jardim)';$('ladd').textContent=v=='compra'?'+ Criar lista':'+ Criar serviço';itEd=null;casa()}
 function addL(ar){const I=LID[ar],n=$(I.n).value.trim().slice(0,60);if(!n){toast('Dê um nome para '+(ar=='trab'||ltp=='servico'?'o serviço':'a lista'));return}
- const l={id:Date.now()+S.casa.listas.length,nome:n,tipo:ar=='trab'?'trabalho':ltp,itens:[]};S.casa.listas.push(l);if(ar=='trab')tl=l.id;else cl=l.id;$(I.n).value='';lstUp(ar)}
-function delL(ar){if(confirm('Apagar esta lista e todos os itens?')){const id=selOf(ar);S.casa.listas=S.casa.listas.filter(l=>l.id!=id);if(ar=='trab')tl=null;else cl=null;itEd=null;lstUp(ar)}}
-function selL(ar,id){if(ar=='trab')tl=id;else cl=id;itEd=null;lstR(ar);casaT()}
+ const l={id:Date.now()+S.casa.listas.length,nome:n,tipo:ar=='trab'?'trabalho':ltp,itens:[]};S.casa.listas.push(l);if(ar=='trab')tl=l.id;else CL[ltp]=l.id;$(I.n).value='';lstUp(ar)}
+function delL(ar){if(confirm('Apagar esta lista e todos os itens?')){const id=selOf(ar);S.casa.listas=S.casa.listas.filter(l=>l.id!=id);if(ar=='trab')tl=null;else CL[ltp]=null;itEd=null;lstUp(ar)}}
+function selL(ar,id){if(ar=='trab')tl=id;else CL[ltp]=id;itEd=null;lstR(ar);casaT()}
 function addI(ar){const l=LA(ar),v=$(LID[ar].i).value.trim().slice(0,120);if(!l||!v)return;l.itens.push({t:v,d:false,p:0,dt:''});lstUp(ar)}
 function tgI(ar,n){const i=(LA(ar)||{itens:[]}).itens[n];if(!i)return;i.d=!i.d;i.dt=i.d?nowL():'';lstUp(ar)}
 function pI(n,v){LA('casa').itens[n].p=+v||0;save();casaT()}
@@ -656,9 +657,10 @@ function svI(){if(!itEd)return;const{ar,n}=itEd,v=$('ied').value.trim().slice(0,
 function cnI(ar){itEd=null;lstR(ar)}
 function rsL(ar){const l=LA(ar);if(!l||!l.itens.some(i=>i.d))return;if(confirm('Desmarcar todas as etapas?')){l.itens.forEach(i=>{i.d=false;i.dt=''});lstUp(ar)}}
 function lstR(ar){const I=LID[ar],L=lsOf(ar),ce=$(I.c),be=$(I.B);if(!ce||!be)return;
- if(!LA(ar)&&L.length){if(ar=='trab')tl=L[0].id;else cl=L[0].id}
+ if(!LA(ar)&&L.length){if(ar=='trab')tl=L[0].id;else CL[ltp]=L[0].id}
+ if(ar=='casa'){const c=t=>S.casa.listas.filter(x=>x.tipo==t).length;document.querySelector('#ltS button[data-v=compra]').textContent='🛒 Lista de compras ('+c('compra')+')';document.querySelector('#ltS button[data-v=servico]').textContent='🧹 Serviço doméstico ('+c('servico')+')'}
  const l=LA(ar),q="'"+ar+"'";
- ce.innerHTML=L.map(x=>'<button class="'+(x.id==selOf(ar)?'on':'')+'" onclick="selL('+q+','+x.id+')">'+(ar=='trab'?'📋 ':x.tipo=='compra'?'🛒 ':'🧹 ')+esc(x.nome)+'</button>').join('')||'<div class="emp">'+(ar=='trab'?'Nenhum checklist ainda. Crie o primeiro abaixo.':'Nenhuma lista ainda. Crie a primeira abaixo.')+'</div>';
+ ce.innerHTML=L.map(x=>'<button class="'+(x.id==selOf(ar)?'on':'')+'" onclick="selL('+q+','+x.id+')">'+(ar=='trab'?'📋 ':x.tipo=='compra'?'🛒 ':'🧹 ')+esc(x.nome)+'</button>').join('')||'<div class="emp">'+(ar=='trab'?'Nenhum checklist ainda. Crie o primeiro abaixo.':ltp=='compra'?'Nenhuma lista de compras ainda. Crie a primeira abaixo.':'Nenhum serviço doméstico ainda. Crie o primeiro abaixo.')+'</div>';
  if(!l){be.innerHTML='';return}
  const sv=l.tipo!='compra',n=l.itens.length,k=l.itens.filter(i=>i.d).length;
  let h='<div class="row" style="margin-top:10px"><input id="'+I.i+'" maxlength="120" placeholder="'+(sv?'Próxima etapa…':'Item para comprar…')+'" onkeydown="if(event.keyCode==13)addI('+q+')"><button class="btn" style="flex:0 0 56px;margin:0" onclick="addI('+q+')">+</button></div>';
@@ -685,7 +687,7 @@ function finSave(){const l=LA('casa'),t=+$('fnT').value,d=$('fnD').value;if(!l||
  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast('Escolha a data');return}if(d>nowL().slice(0,10)){toast('A data não pode ser futura');return}
  const mk=l.itens.filter(i=>i.d),base=mk.length?mk:l.itens;
  S.casa.compras.unshift({id:Date.now(),dt:d+'T12:00',local:$('fnL').value.trim().slice(0,60),nome:l.nome,total:Math.round(t*100)/100,itens:base.map(i=>({t:i.t,p:+i.p||0}))});
- S.casa.listas=S.casa.listas.filter(x=>x.id!=l.id);cl=null;save();closeM();render();toast('Compra de '+R(t)+' guardada no histórico')}
+ S.casa.listas=S.casa.listas.filter(x=>x.id!=l.id);CL.compra=null;save();closeM();render();toast('Compra de '+R(t)+' guardada no histórico')}
 function cpTg(id){cpOpen=cpOpen==id?null:id;cpR()}
 function cpDel(id){if(confirm('Apagar esta compra do histórico? O valor sai do total do mês.')){S.casa.compras=S.casa.compras.filter(c=>c.id!=id);if(cpOpen==id)cpOpen=null;save();render()}}
 function cpR(){const e=$('cpL');if(!e)return;const L=S.casa.compras.slice().sort((a,b)=>a.dt<b.dt?1:a.dt>b.dt?-1:0),mm=L.filter(c=>cmes(c.dt));
@@ -697,7 +699,7 @@ function casaT(){let cp=0;S.casa.listas.forEach(l=>l.tipo=='compra'&&l.itens.for
  const dd=S.casa.gastos.filter(g=>cmes(g.dt)).reduce((a,g)=>a+(+g.p||0),0);
  $('czT').textContent=R(cp+dd);$('czC').textContent=R(cp);$('czG').textContent=R(dd);
  const l=LA('casa'),e=$('lTot');if(l&&e&&l.tipo=='compra'){const k=l.itens.filter(i=>i.d);e.innerHTML='🛒 Gasto desta lista: <b>'+R(k.reduce((a,i)=>a+(+i.p||0),0))+'</b> • '+k.length+' de '+l.itens.length+' comprados'}}
-function casa(){lstR('casa');cpR();
+function casa(){lstR('casa');cpR();$('cpC').style.display=ltp=='compra'?'':'none';
  $('gL').innerHTML=S.casa.gastos.slice(0,20).map(g=>'<div class="it"><div class="b"><div class="t"><span>'+esc(g.d)+'</span><span>'+R(g.p)+'</span></div><small>'+esc(g.cat)+' • '+fd(g.dt)+'</small></div><button class="mini" onclick="delG('+g.id+')">🗑️</button></div>').join('')||'<div class="emp">Nenhum gasto ainda. Anote o primeiro acima.</div>';
  casaT()}
 const CI={cartao:'💳',agua:'💧',luz:'💡',internet:'🌐',outro:'📌'};
