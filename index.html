@@ -179,7 +179,7 @@ html.lock,html.lock body{overflow:hidden}
   <input id="pen" placeholder="Ex.: bico, freelance, venda…">
   <div class="row" style="margin-top:8px"><input id="pev" type="number" inputmode="decimal" step="0.01" placeholder="Valor (R$)"><select id="pef"><option value="semanal">Toda semana</option><option value="mensal">Todo mês</option><option value="unico">Só este mês</option></select></div>
   <button class="btn s" onclick="plAdd()">+ Adicionar ganho extra</button><div id="peL" style="margin-top:6px"></div></div>
- <div class="card" id="obC"><div class="ct">🎯 Meus objetivos</div><div id="obL"></div><button class="btn s" id="obN" onclick="openOb()">+ Novo objetivo</button></div>
+ <div class="card"><div class="ct">🎯 Meus objetivos</div><div id="obL"></div><button class="btn s" id="obN" onclick="openOb()">+ Novo objetivo</button></div>
  <div class="card"><div class="ct" id="plT"></div><div id="plR"></div></div>
 </section>
 
@@ -430,7 +430,7 @@ function carregar(raw){
  arO(p.extras).forEach(e=>{e.id=nm(e.id,Date.now()+out.plano.extras.length);e.nome=String(e.nome==null?'':e.nome);e.v=nm(e.v);out.plano.extras.push(e)});
  const b=isO(x.bk)?x.bk:{};out.bk={ult:Math.max(0,nm(b.ult)),cnt:Math.max(0,nm(b.cnt)),adiar:Math.max(0,nm(b.adiar))};
  arO(x.obj).forEach(o=>{const mt=nm(o.meta),pz=String(o.prazo);if(!(mt>0)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(pz)||out.obj.length>=3){DROP++;return}
-  out.obj.push({id:nm(o.id,Date.now()+out.obj.length),nome:String(o.nome==null?'':o.nome).slice(0,40),ic:OBI.includes(o.ic)?o.ic:'🎯',meta:mt,saldo:Math.max(0,nm(o.saldo)),prazo:pz,onde:OBO.includes(o.onde)?o.onde:'Outro',mk:Math.max(0,Math.min(100,nm(o.mk))),hist:arO(o.hist).slice(-24).map(h=>({dt:String(h.dt==null?'':h.dt),v:nm(h.v)}))})});
+  out.obj.push({id:nm(o.id,Date.now()+out.obj.length),nome:String(o.nome==null?'':o.nome).slice(0,40),ic:OBI.includes(o.ic)?o.ic:'🎯',meta:mt,saldo:Math.max(0,nm(o.saldo)),prazo:pz,onde:OBO.includes(o.onde)?o.onde:'Outro',mk:Math.max(0,Math.min(100,nm(o.mk)))})});
  const tr=isO(x.trab)?x.trab:{},okD=d=>/^\d{4}-\d{2}-\d{2}/.test(d),tx=(v,n)=>String(v==null?'':v).slice(0,n);
  out.trab.ativ=tx(tr.ativ,200).trim().slice(0,40);if(!out.trab.ativ&&PROF_OLD.includes(x.perf))out.trab.ativ=x.perf;out.trab.cur=(cu('trabalho',nm(tr.cur))||{}).id||0;
  arO(tr.ganhos).forEach(g=>{const v=nm(g.v),d=tx(g.dt,40);if(!(v>0)||!okD(d)||out.trab.ganhos.length>=5000){DROP++;return}out.trab.ganhos.push({id:nm(g.id,Date.now()+out.trab.ganhos.length),dt:ndt(d),v,cli:tx(g.cli,60),d:tx(g.d,80)})});
@@ -480,11 +480,11 @@ function obSave(){if(!obEd&&S.obj.length>=3){toast('Limite de 3 objetivos');retu
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(prazo)){toast('Escolha o mês do prazo');return}
  if(obMes(prazo)<0&&!(obEd&&obEd.prazo==prazo)){toast('Escolha um mês de hoje em diante');return}
  if(obEd)Object.assign(obEd,{ic,nome,meta,saldo,prazo,onde,mk:Math.min(100,Math.floor(saldo/meta*100))});
- else S.obj.push({id:Date.now(),ic,nome,meta,saldo,prazo,onde,mk:Math.min(100,Math.floor(saldo/meta*100)),hist:[]});
+ else S.obj.push({id:Date.now(),ic,nome,meta,saldo,prazo,onde,mk:Math.min(100,Math.floor(saldo/meta*100))});
  save();closeM();render();toast('Objetivo salvo')}
-function obDel(){if(obEd&&confirm('Excluir este objetivo? O histórico dele será apagado.')){S.obj=S.obj.filter(x=>x.id!=obEd.id);save();closeM();render()}}
+function obDel(){if(obEd&&confirm('Excluir este objetivo?')){S.obj=S.obj.filter(x=>x.id!=obEd.id);save();closeM();render()}}
 function obG(id){const o=S.obj.find(x=>x.id==id),v=+($('obv'+id)||{}).value;if(!o)return;if(!(v>0)){toast('Informe o valor que você guardou');return}
- o.saldo=Math.round((o.saldo+v)*100)/100;o.hist.push({dt:nowL(),v});o.hist=o.hist.slice(-24);
+ o.saldo=Math.round((o.saldo+v)*100)/100;
  const p=Math.min(100,Math.floor(o.saldo/o.meta*100)),mk=[25,50,75,100].filter(m=>p>=m&&m>o.mk).pop();o.mk=Math.max(o.mk,p);save();render();
  toast(mk==100?'🎉 Objetivo alcançado! Parabéns!':mk?'🎉 Você chegou a '+mk+'% do objetivo!':'Guardado: '+R(v))}
 /* ===== Manutenção por km (Etapa 4) ===== */
