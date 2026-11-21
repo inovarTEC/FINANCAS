@@ -184,8 +184,12 @@ html.lock,html.lock body{overflow:hidden}
 </section>
 
 <section class="tab" id="t-prof">
- <div class="seg" id="tvs"><button class="on" data-v="res" onclick="trv('res')">📊 Resultado</button><button data-v="preco" onclick="trv('preco')">💲 Preço</button><button data-v="chk" onclick="trv('chk')">📋 Checklist</button></div>
- <div id="tr-res">
+ <div class="seg" id="tvs"><button class="on" data-v="ag" onclick="trv('ag')">📅 Agenda</button><button data-v="res" onclick="trv('res')">📊 Resultado</button><button data-v="fer" onclick="trv('fer')">🛠️ Ferramentas</button></div>
+ <div id="tr-ag">
+  <div class="card"><div class="ct">📅 Agenda de atendimentos</div><div class="chips" id="agC"></div><div id="agL"></div>
+   <button class="btn" onclick="atNovo()">＋ Novo atendimento</button></div>
+ </div>
+ <div id="tr-res" style="display:none">
   <div class="card"><div class="ct">📊 Resultado do trabalho</div>
    <div class="cl"><button class="mini" aria-label="Anterior" onclick="trNav(-1)">‹</button><b id="trLb"></b><button class="mini" aria-label="Próximo" onclick="trNav(1)">›</button></div>
    <div class="seg" id="trPs" style="margin:8px 0"><button class="on" data-v="mes" onclick="trP('mes')">Mês</button><button data-v="ano" onclick="trP('ano')">Ano</button></div>
@@ -208,8 +212,8 @@ html.lock,html.lock body{overflow:hidden}
    <small style="color:var(--mu);display:block;line-height:1.4">Combustível, oficina, seguro e IPVA do veículo de trabalho entram sozinhos no resultado. Lance cada gasto em um só lugar.</small></div>
   <div class="card"><div class="ct">🗒️ Lançamentos do período</div><div id="trL"></div><button class="btn s" onclick="openRel('trab')">📄 Relatório de trabalho (PDF)</button></div>
  </div>
- <div id="tr-preco" style="display:none">
- <div class="card"><div class="ct">👷 Preço justo do serviço</div>
+ <div id="tr-fer" style="display:none">
+ <div class="card"><div class="ct">👷 Quanto cobrar</div>
   <label>Distância ida e volta (km)</label><input id="pd" type="number" inputmode="decimal" oninput="calc()" placeholder="20">
   <label>Sua mão de obra (R$)</label><input id="pm" type="number" inputmode="decimal" oninput="calc()" placeholder="150">
   <div class="row"><div><label>Custo por km (R$)</label><input id="pk" type="number" inputmode="decimal" step="0.01" oninput="calc()"></div><div><label>Cota diária do carro (R$)</label><input id="pc" type="number" inputmode="decimal" step="0.01" oninput="calc()"></div></div>
@@ -217,8 +221,6 @@ html.lock,html.lock body{overflow:hidden}
   <div class="cr" id="cr"></div>
   <button class="btn w" onclick="zap()">📲 Enviar orçamento no WhatsApp</button>
   <button class="btn s" onclick="copiar()">📋 Copiar orçamento</button></div>
- </div>
- <div id="tr-chk" style="display:none">
  <div class="card"><div class="ct">📋 Checklist de serviço</div><div class="chips" id="tsc"></div>
   <input id="tsn" maxlength="60" placeholder="Nome do serviço (ex.: Instalar chuveiro, Cliente João)">
   <button class="btn s" onclick="addL('trab')">+ Criar checklist</button><div id="tsB"></div></div>
@@ -304,6 +306,24 @@ html.lock,html.lock body{overflow:hidden}
  <small style="color:var(--mu);display:block;margin-top:10px">Valores informados por você, sem rendimento. É uma ajuda de organização, não consultoria financeira.</small>
 </div></div>
 
+<div class="mo" id="mAn"><div class="mb">
+ <div class="mh"><span id="anH">Novo atendimento</span><button class="ib" onclick="closeM()">✖</button></div>
+ <label>Cliente</label><input id="anC" list="dlCli" maxlength="60" placeholder="Nome do cliente" onchange="anFill()"><datalist id="dlCli"></datalist>
+ <div class="row"><div><label>Telefone (opcional)</label><input id="anT" type="tel" maxlength="20" placeholder="(81) 99999-9999"></div><div><label>Local (opcional)</label><input id="anL" maxlength="80" placeholder="Endereço ou bairro"></div></div>
+ <div class="row"><div><label>Data</label><input id="anD" type="date"></div><div><label>Hora</label><input id="anS" type="time"></div></div>
+ <button class="btn" onclick="atNovoSave()">Agendar</button>
+</div></div>
+
+<div class="mo" id="mAt"><div class="mb">
+ <div class="mh"><span>🛠️ Atendimento</span><button class="ib" onclick="closeM()">✖</button></div>
+ <div id="atB"></div>
+</div></div>
+
+<div class="mo" id="mCl"><div class="mb">
+ <div class="mh"><span id="clH">Cliente</span><button class="ib" onclick="closeM()">✖</button></div>
+ <div id="clB"></div>
+</div></div>
+
 <div class="mo" id="mGq"><div class="mb">
  <div class="mh"><span id="gqH">Gasto rápido</span><button class="ib" onclick="closeM()">✖</button></div>
  <input id="gqd" maxlength="80" placeholder="O que foi? (ex.: lanche, almoço)" style="margin-top:8px">
@@ -376,7 +396,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const R=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const KEY='agp1',TH=['executivo','noturno','facil'],NM={c:'Abastecimento',o:'Oficina',i:'IPVA / taxas',s:'Seguro',f:'Financiamento'},IC={c:'⛽',o:'🔧',i:'📄',s:'🛡️',f:'🏦'};
 const COL=['#10B981','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#14B8A6'],TI={carro:'🚘 ',moto:'🏍️ ',bike:'🚲 ',ebike:'⚡🚲 '};
-let S={v:6,cars:[],cur:null,esp:'pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',ganhos:[],gastos:[],cur:0}};
+let S={v:6,cars:[],cur:null,esp:'pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',ganhos:[],gastos:[],ats:[],cur:0}};
 function mig(x){if(!x||typeof x!='object')return null;if(x.car&&!x.cars){x.cars=[Object.assign({id:1,tipo:'carro'},x.car)];x.cur=1;(x.regs||[]).forEach(r=>{r.vid=1});delete x.car}
  if(!Array.isArray(x.cars)||!Array.isArray(x.regs))return null;x.v=2;x.regs.forEach(r=>{if(!r.vid&&x.cars[0])r.vid=x.cars[0].id});if(!x.cars.some(c=>c.id==x.cur))x.cur=x.cars.length?x.cars[0].id:null;
  x.chk=x.chk||{};x.chk.oficina=x.chk.oficina||[];
@@ -402,7 +422,7 @@ function carregar(raw){
  if(w.regs){const n=w.regs.length;w.regs=arO(w.regs);DROP+=n-w.regs.length}
  if(w.obj===undefined)w.obj=[];if(w.trab===undefined)w.trab={};if(w.esp===undefined)w.esp='pessoal';
  const x=mig(w);if(!x)return null;
- const out={v:6,cars:[],cur:x.cur,esp:x.esp=='trabalho'?'trabalho':'pessoal',tema:TH.includes(x.tema)?x.tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',ganhos:[],gastos:[],cur:0}};
+ const out={v:6,cars:[],cur:x.cur,esp:x.esp=='trabalho'?'trabalho':'pessoal',tema:TH.includes(x.tema)?x.tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',ganhos:[],gastos:[],ats:[],cur:0}};
  out.perfOk=false;
  const dt=/^\d{4}-\d{2}-\d{2}$/;
  x.cars.forEach(c=>{
@@ -432,7 +452,11 @@ function carregar(raw){
  arO(x.obj).forEach(o=>{const mt=nm(o.meta),pz=String(o.prazo);if(!(mt>0)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(pz)||out.obj.length>=3){DROP++;return}
   out.obj.push({id:nm(o.id,Date.now()+out.obj.length),nome:String(o.nome==null?'':o.nome).slice(0,40),ic:OBI.includes(o.ic)?o.ic:'🎯',meta:mt,saldo:Math.max(0,nm(o.saldo)),prazo:pz,onde:OBO.includes(o.onde)?o.onde:'Outro',mk:Math.max(0,Math.min(100,nm(o.mk)))})});
  const tr=isO(x.trab)?x.trab:{},okD=d=>/^\d{4}-\d{2}-\d{2}/.test(d),tx=(v,n)=>String(v==null?'':v).slice(0,n);
+ const dtm=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,tm=v=>{v=tx(v,16);return dtm.test(v)?v:''},mny=v=>Math.min(1e7,Math.max(0,nm(v)));
  out.trab.ativ=tx(tr.ativ,200).trim().slice(0,40);if(!out.trab.ativ&&PROF_OLD.includes(x.perf))out.trab.ativ=x.perf;out.trab.cur=(cu('trabalho',nm(tr.cur))||{}).id||0;
+ arO(tr.ats).forEach(a=>{const d=tx(a.dt,16),cli=tx(a.cli,60).trim();if(!dtm.test(d)||!cli||out.trab.ats.length>=3000){DROP++;return}
+  const st=['agendado','atendido','nao'].includes(a.st)?a.st:'agendado',pago=st=='atendido'&&!!a.pago;let ent=tm(a.ent),sai=tm(a.sai);if(ent&&sai&&sai<ent)sai='';
+  out.trab.ats.push({id:nm(a.id,Date.now()+out.trab.ats.length),cli,tel:tx(a.tel,20),loc:tx(a.loc,80),dt:d,st,ent,sai,srv:arO(a.srv).slice(0,50).map(x=>({d:tx(x.d,80),v:mny(x.v)})),mat:arO(a.mat).slice(0,50).map(x=>({d:tx(x.d,80),v:mny(x.v),cob:x.cob!==false})),pago,pgdt:pago?(okD(tx(a.pgdt,10))?tx(a.pgdt,10):d.slice(0,10)):''})});
  arO(tr.ganhos).forEach(g=>{const v=nm(g.v),d=tx(g.dt,40);if(!(v>0)||!okD(d)||out.trab.ganhos.length>=5000){DROP++;return}out.trab.ganhos.push({id:nm(g.id,Date.now()+out.trab.ganhos.length),dt:ndt(d),v,cli:tx(g.cli,60),d:tx(g.d,80)})});
  arO(tr.gastos).forEach(g=>{const p=nm(g.p),d=tx(g.dt,40),n=Math.floor(nm(g.n,1));if(!(p>0)||!okD(d)||out.trab.gastos.length>=5000){DROP++;return}out.trab.gastos.push({id:nm(g.id,Date.now()+out.trab.gastos.length),dt:ndt(d),cat:TCAT.includes(g.cat)?g.cat:'Outros',d:tx(g.d,80),p,n:n>=1&&n<=60?n:1})});
  out.perfOk=!!x.perfOk||out.cars.length>0||out.regs.length>0||out.esp!='pessoal';
@@ -531,7 +555,7 @@ function trR(){const e=$('trL');if(!e)return;const A=trRows().filter(trIn),G=A.f
  const g={};A.filter(r=>r.k!='g').forEach(r=>{g[r.cat]=(g[r.cat]||0)+r.v});const C=Object.entries(g).sort((x,y)=>y[1]-x[1]);
  $('trCt').innerHTML=C.length?'<div class="ct" style="margin:0 0 4px">Onde foi o dinheiro</div>'+C.map(([k,v])=>'<div class="cl"><span>'+esc(k)+'</span><b>'+R(v)+' ('+Math.round(v/D*100)+'%)</b></div>').join(''):'';
  e.innerHTML=A.length?A.slice(0,40).map(r=>'<div class="it"><div style="font-size:22px">'+(r.k=='g'?'💰':r.k=='d'?'🧾':'🚗')+'</div><div class="b"><div class="t"><span>'+esc(r.t)+'</span><span style="color:'+(r.k=='g'?'var(--ac)':'#EF4444')+'">'+(r.k=='g'?'+':'−')+R(r.v)+'</span></div><small>'+(r.pc?'Parcela '+r.pc+' • total '+R(r.tot)+' • '+r.ym.slice(5)+'/'+r.ym.slice(0,4):dBR(r.dt))+(r.k=='d'?' • '+esc(r.cat):r.k=='v'?' • do veículo':'')+(r.x?' • '+esc(r.x):'')+'</small></div>'+(r.k=='v'?'':'<button class="mini" aria-label="Apagar" onclick="trDel(\''+r.k+'\','+r.id+')">🗑️</button>')+'</div>').join('')+(A.length>40?'<small style="color:var(--mu)">Mostrando os 40 mais recentes.</small>':''):'<div class="emp">Nenhum lançamento neste período.</div>'}
-function trv(v){['res','preco','chk'].forEach(k=>$('tr-'+k).style.display=k==v?'':'none');document.querySelectorAll('#tvs button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
+function trv(v){['ag','res','fer'].forEach(k=>$('tr-'+k).style.display=k==v?'':'none');document.querySelectorAll('#tvs button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
 function trF(v){['g','d'].forEach(k=>$('tf-'+k).style.display=k==v?'':'none');document.querySelectorAll('#tfs button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
 function trP(p){trPer=p;trR()}
 function trNav(k){trYM=ymA(trYM,trPer=='ano'?12*k:k);trR()}
@@ -545,6 +569,77 @@ function trAddD(){const p=+$('tdv').value,d=$('tdw').value,n=+$('tdp').value;if(
  $('tdd').value='';$('tdv').value='';$('tdp').value='1';$('tdw').value=nowL().slice(0,10);trPv();trYM=d.slice(0,7);save();render();toast(n>1?'Compra parcelada registrada: '+n+'x de '+R(p/n):'Gasto de '+R(p)+' registrado')}
 function trDel(k,id){const g=k=='d'?S.trab.gastos.find(x=>x.id==id):null;if(!confirm(g&&g.n>1?'Apagar a compra inteira (todas as '+g.n+' parcelas)?':'Apagar este lançamento?'))return;
  if(k=='g')S.trab.ganhos=S.trab.ganhos.filter(x=>x.id!=id);else S.trab.gastos=S.trab.gastos.filter(x=>x.id!=id);save();render()}
+/* ===== Agenda de atendimentos (Fase 1) ===== */
+let agF='hoje',atId=null,atFrom=null,atCp=[],clN='';
+const ATT=a=>a.srv.reduce((x,y)=>x+y.v,0)+a.mat.filter(m=>m.cob).reduce((x,y)=>x+y.v,0),ATK=n=>String(n).trim().toLowerCase(),ATD=a=>a.dt.slice(0,10),hoje=()=>nowL().slice(0,10);
+const ATL={agendado:'📅 Agendado',andamento:'⏱️ Em andamento',atrasado:'⚠️ Atrasado',receber:'💰 A receber',pago:'✅ Pago',nao:'🚫 Não atendido'},ATI={agendado:'📅',andamento:'⏱️',atrasado:'⚠️',receber:'💰',pago:'✅',nao:'🚫'};
+function atS(a){if(a.st=='atendido')return a.pago?'pago':'receber';if(a.st=='nao')return 'nao';if(a.ent)return 'andamento';return ATD(a)<hoje()?'atrasado':'agendado'}
+function atTempo(a){if(!a.ent||!a.sai)return '';const m=Math.round((new Date(a.sai)-new Date(a.ent))/6e4);return m>=0?(m>=60?Math.floor(m/60)+'h ':'')+(m%60)+'min':''}
+const AGF=[['hoje','Hoje',a=>ATD(a)==hoje()],['prox','Próximos',a=>a.st=='agendado'&&ATD(a)>hoje()],['atend','Atendidos',a=>a.st=='atendido'],['nao','Não atendidos',a=>['nao','atrasado'].includes(atS(a))],['rec','A receber',a=>a.st=='atendido'&&!a.pago]];
+const atAch=id=>S.trab.ats.find(x=>x.id==id);
+function agAl(){const h=hoje(),o=[];S.trab.ats.forEach(a=>{if(a.st!='agendado'||a.ent)return;const d=ATD(a);if(d==h)o.push('📅 <b>Hoje '+a.dt.slice(11)+' — '+esc(a.cli)+'</b>'+(a.loc?' • '+esc(a.loc):''));else if(d<h)o.push('⚠️ <b>Atendimento atrasado:</b> '+esc(a.cli)+' ('+dBR(a.dt)+')')});return o}
+function atCard(a){const s=atS(a),b=(t,fn)=>'<button class="mini" onclick="event.stopPropagation();'+fn+'">'+t+'</button>',tot=ATT(a),
+ ac={agendado:b('📍 Cheguei','atChega('+a.id+')'),atrasado:b('📍 Cheguei','atChega('+a.id+')')+b('🔁 Reagendar','atRe('+a.id+')'),andamento:b('✔ Saí / Concluir','atSai('+a.id+')'),receber:b('💰 Marcar pago','atPaga('+a.id+')'),pago:'',nao:b('🔁 Reagendar','atRe('+a.id+')')}[s]+(a.tel&&['agendado','atrasado','andamento','nao'].includes(s)?b('💬','atZap('+a.id+')'):'');
+ return '<div class="it" onclick="atOpen('+a.id+')" style="cursor:pointer"><div style="font-size:22px">'+ATI[s]+'</div><div class="b"><div class="t"><span>'+(['agendado','atrasado','andamento'].includes(s)?a.dt.slice(11)+' — ':'')+esc(a.cli)+'</span><span>'+(tot?R(tot):'')+'</span></div><small>'+ATL[s]+' • '+dBR(a.dt)+(a.loc?' • '+esc(a.loc):'')+(atTempo(a)?' • '+atTempo(a):'')+(a.pago?' • pago em '+dBR(a.pgdt):'')+'</small>'+(ac?'<div style="margin-top:6px">'+ac+'</div>':'')+'</div></div>'}
+function agR(){const e=$('agL');if(!e)return;const A=S.trab.ats;
+ $('agC').innerHTML=AGF.map(([k,t,f])=>{const L=A.filter(f);return '<button class="'+(agF==k?'on':'')+'" onclick="agFil(\''+k+'\')">'+t+' '+(k=='rec'?R(L.reduce((x,a)=>x+ATT(a),0)):L.length)+'</button>'}).join('');
+ const f=(AGF.find(x=>x[0]==agF)||AGF[0])[2],asc=agF=='hoje'||agF=='prox',L=A.filter(f).sort((x,y)=>(x.dt<y.dt?-1:1)*(asc?1:-1));
+ e.innerHTML=L.length?L.map(atCard).join(''):'<div class="emp">'+({hoje:'Nenhum atendimento hoje.',prox:'Nenhum atendimento marcado pela frente.',atend:'Nenhum atendimento concluído ainda.',nao:'Nenhum atendimento perdido.',rec:'Nada a receber.'})[agF]+'</div>';
+ $('dlCli').innerHTML=[...new Map(A.slice().sort((x,y)=>x.dt<y.dt?-1:1).map(a=>[ATK(a.cli),a.cli])).values()].map(n=>'<option value="'+esc(n)+'">').join('')}
+function agFil(k){agF=k;agR()}
+function atRef(){save();render();if($('mAt').classList.contains('on'))atR();if($('mCl').classList.contains('on'))clR()}
+function atNovo(p){atFrom=p?p.id:null;atCp=p?p.srv.map(x=>({d:x.d,v:x.v})):[];$('anH').textContent=p&&p.st!=null?'Reagendar atendimento':'Novo atendimento';
+ $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anD').value=hoje();$('anS').value='08:00';$('mAn').classList.add('on')}
+const clC=n=>{const L=S.trab.ats.filter(a=>ATK(a.cli)==ATK(n)).sort((x,y)=>x.dt<y.dt?1:-1),t=L.find(a=>a.tel);return{L,u:L[0],tel:t?t.tel:'',tid:t?t.id:0,loc:(L.find(a=>a.loc)||{}).loc||''}};
+function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT').value=c.tel;if(!$('anL').value)$('anL').value=c.loc}}
+function atNovoSave(){const cli=$('anC').value.trim().slice(0,60),d=$('anD').value,h=$('anS').value;if(!cli){toast('Informe o nome do cliente');return}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast('Escolha a data');return}if(!/^\d{2}:\d{2}$/.test(h)){toast('Escolha a hora');return}if(S.trab.ats.length>=3000){toast('Limite de atendimentos atingido');return}
+ S.trab.ats.push({id:Date.now(),cli,tel:$('anT').value.trim().slice(0,20),loc:$('anL').value.trim().slice(0,80),dt:d+'T'+h,st:'agendado',ent:'',sai:'',srv:atCp.map(x=>({d:x.d,v:x.v})),mat:[],pago:false,pgdt:''});
+ if(atFrom){const o=atAch(atFrom);if(o&&o.st=='agendado'){o.st='nao';o.ent='';o.sai=''}}atFrom=null;atCp=[];agF=d==hoje()?'hoje':d>hoje()?'prox':'nao';closeM();atRef();toast('Atendimento agendado para '+dBR(d)+' às '+h)}
+function atOpen(id){if(!atAch(id))return;closeM();atId=id;atR();$('mAt').classList.add('on')}
+function atChega(id){const a=atAch(id);if(!a)return;a.ent=nowL();a.sai='';save();render();atOpen(id);toast('Entrada registrada às '+a.ent.slice(11))}
+function atSai(id){const a=atAch(id);if(!a)return;a.sai=nowL();a.st='atendido';atRef();toast('Serviço concluído'+(ATT(a)?'. Total '+R(ATT(a)):''))}
+function atPaga(id){const a=atAch(id);if(!a)return;a.pago=true;a.pgdt=hoje();atRef();toast('Pagamento registrado')}
+function atRe(id){const a=atAch(id);if(a){closeM();atNovo(a)}}
+function atZap(id){const a=atAch(id);if(!a)return;let n=a.tel.replace(/\D/g,'');if(n.length<10){toast('Telefone inválido');return}if(n.length<=11)n='55'+n;
+ window.open('https://wa.me/'+n+'?text='+encodeURIComponent('Olá, '+a.cli+'! Confirmando nosso atendimento em '+dBR(a.dt)+' às '+a.dt.slice(11)+'.'),'_blank')}
+function atSet(){const a=atAch(atId);if(!a)return;const c=$('atC').value.trim().slice(0,60),d=$('atD').value,h=$('atH').value,e=$('atE').value,x=$('atS').value;
+ if(!c){toast('O nome do cliente é obrigatório');atR();return}if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!/^\d{2}:\d{2}$/.test(h)){toast('Data ou hora inválida');atR();return}
+ if(e&&x&&x<e){toast('A saída é antes da entrada');atR();return}
+ a.cli=c;a.tel=$('atT').value.trim().slice(0,20);a.loc=$('atL').value.trim().slice(0,80);a.dt=d+'T'+h;a.ent=e;a.sai=x;atRef()}
+function atAgora(k){const a=atAch(atId);if(!a)return;if(k=='ent'){a.ent=nowL();a.sai=''}else{if(!a.ent)a.ent=nowL();a.sai=nowL();if(a.st=='agendado')a.st='atendido'}atRef()}
+function atSv(i,f,v){const a=atAch(atId);if(!a||!a.srv[i])return;if(f=='d')a.srv[i].d=v.trim().slice(0,80);else a.srv[i].v=Math.min(1e7,Math.max(0,+v||0));atRef()}
+function atSvAdd(){const a=atAch(atId),d=$('asD').value.trim().slice(0,80),v=+$('asV').value;if(!a)return;if(!d){toast('Descreva o serviço');return}if(!(v>=0&&v<=1e7)){toast('Valor inválido');return}if(a.srv.length>=50){toast('Limite de serviços');return}a.srv.push({d,v:Math.round(v*100)/100});atRef()}
+function atSvDel(i){const a=atAch(atId);if(a){a.srv.splice(i,1);atRef()}}
+function atMt(i,f,v){const a=atAch(atId);if(!a||!a.mat[i])return;if(f=='d')a.mat[i].d=v.trim().slice(0,80);else a.mat[i].v=Math.min(1e7,Math.max(0,+v||0));atRef()}
+function atMtCob(i){const a=atAch(atId);if(a&&a.mat[i]){a.mat[i].cob=!a.mat[i].cob;atRef()}}
+function atMtAdd(){const a=atAch(atId),d=$('amD').value.trim().slice(0,80),v=+$('amV').value;if(!a)return;if(!d){toast('Descreva o material');return}if(!(v>=0&&v<=1e7)){toast('Valor inválido');return}if(a.mat.length>=50){toast('Limite de materiais');return}a.mat.push({d,v:Math.round(v*100)/100,cob:$('amC').checked});atRef()}
+function atMtDel(i){const a=atAch(atId);if(a){a.mat.splice(i,1);atRef()}}
+function atStat(st){const a=atAch(atId);if(!a)return;a.st=st;if(st!='atendido'){a.pago=false;a.pgdt=''}if(st=='nao'){a.ent='';a.sai=''}atRef()}
+function atPg(v){const a=atAch(atId);if(!a)return;a.pago=!!v;a.pgdt=v?hoje():'';atRef()}
+function atDel(){const a=atAch(atId);if(!a||!confirm('Excluir este atendimento? Os serviços e materiais dele serão apagados.'))return;S.trab.ats=S.trab.ats.filter(x=>x.id!=atId);atId=null;closeM();atRef();toast('Atendimento excluído')}
+function atCli(){const a=atAch(atId);if(a)clOpen(a.cli)}
+function atR(){const a=atAch(atId),e=$('atB');if(!a||!e)return;const s=atS(a),tot=ATT(a),mn=a.mat.filter(m=>!m.cob).reduce((x,m)=>x+m.v,0),b=(t,fn,c)=>'<button class="btn '+(c||'s')+'" style="margin:0" onclick="'+fn+'">'+t+'</button>';
+ e.innerHTML='<div class="cl"><b>'+ATL[s]+(a.pago?' em '+dBR(a.pgdt):'')+'</b><button class="mini" onclick="atCli()">👤 Ver cliente</button></div>'
+ +'<label>Cliente</label><input id="atC" list="dlCli" maxlength="60" value="'+esc(a.cli)+'" onchange="atSet()">'
+ +'<div class="row"><div><label>Telefone</label><input id="atT" type="tel" maxlength="20" value="'+esc(a.tel)+'" onchange="atSet()"></div><div><label>Local</label><input id="atL" maxlength="80" value="'+esc(a.loc)+'" onchange="atSet()"></div></div>'
+ +'<div class="row"><div><label>Data</label><input id="atD" type="date" value="'+ATD(a)+'" onchange="atSet()"></div><div><label>Hora</label><input id="atH" type="time" value="'+a.dt.slice(11)+'" onchange="atSet()"></div></div>'
+ +'<div class="ct" style="margin:12px 0 4px">⏱️ Tempo no local</div>'
+ +'<div class="row"><div><label>Entrada</label><input id="atE" type="datetime-local" value="'+a.ent+'" onchange="atSet()"></div><div><label>Saída</label><input id="atS" type="datetime-local" value="'+a.sai+'" onchange="atSet()"></div></div>'
+ +'<div class="row" style="margin-top:8px">'+b('📍 Cheguei agora',"atAgora('ent')")+b('✔ Saí agora',"atAgora('sai')")+'</div>'+(atTempo(a)?'<div class="ins" style="margin-top:8px">Tempo no local: <b>'+atTempo(a)+'</b></div>':'')
+ +'<div class="ct" style="margin:12px 0 4px">🔧 Serviços</div>'+(a.srv.length?a.srv.map((x,i)=>'<div class="row" style="margin-bottom:6px"><input value="'+esc(x.d)+'" maxlength="80" placeholder="Serviço" onchange="atSv('+i+',\'d\',this.value)"><input type="number" inputmode="decimal" step="0.01" value="'+(x.v||'')+'" placeholder="R$" style="max-width:110px" onchange="atSv('+i+',\'v\',this.value)"><button class="mini" aria-label="Apagar" onclick="atSvDel('+i+')">🗑️</button></div>').join(''):'<div class="emp">Nenhum serviço lançado.</div>')
+ +'<div class="row"><input id="asD" maxlength="80" placeholder="Serviço (ex.: trocar tomadas)"><input id="asV" type="number" inputmode="decimal" step="0.01" placeholder="R$" style="max-width:110px"><button class="btn" style="flex:0 0 56px;margin:0" onclick="atSvAdd()">+</button></div>'
+ +'<div class="ct" style="margin:12px 0 4px">🧱 Materiais</div>'+(a.mat.length?a.mat.map((x,i)=>'<div class="row" style="margin-bottom:6px"><input value="'+esc(x.d)+'" maxlength="80" placeholder="Material" onchange="atMt('+i+',\'d\',this.value)"><input type="number" inputmode="decimal" step="0.01" value="'+(x.v||'')+'" placeholder="R$" style="max-width:110px" onchange="atMt('+i+',\'v\',this.value)"><label style="display:flex;gap:4px;align-items:center;font-size:calc(12px*var(--fs));flex:0 0 auto"><input type="checkbox" style="width:auto" '+(x.cob?'checked ':'')+'onchange="atMtCob('+i+')">Cobrar</label><button class="mini" aria-label="Apagar" onclick="atMtDel('+i+')">🗑️</button></div>').join(''):'<div class="emp">Nenhum material lançado.</div>')
+ +'<div class="row"><input id="amD" maxlength="80" placeholder="Material (ex.: fio 2,5mm)"><input id="amV" type="number" inputmode="decimal" step="0.01" placeholder="R$" style="max-width:110px"><label style="display:flex;gap:4px;align-items:center;font-size:calc(12px*var(--fs));flex:0 0 auto"><input id="amC" type="checkbox" style="width:auto" checked>Cobrar</label><button class="btn" style="flex:0 0 56px;margin:0" onclick="atMtAdd()">+</button></div>'
+ +'<div class="ins" style="margin-top:12px">Total a cobrar: <b>'+R(tot)+'</b>'+(mn?'<br>Material não cobrado (gasto seu): '+R(mn):'')+'</div>'
+ +'<div class="row" style="margin-top:10px">'+(['agendado','atrasado','andamento'].includes(s)?b('✅ Marcar como atendido',"atStat('atendido')",'')+b('🚫 Não atendido',"atStat('nao')"):s=='receber'?b('💰 Marcar pago','atPg(true)','')+b('↩ Reabrir',"atStat('agendado')"):s=='pago'?b('↩ Desmarcar pago','atPg(false)'):b('🔁 Reagendar','atRe('+a.id+')','')+b('↩ Reabrir',"atStat('agendado')"))+'</div>'
+ +'<button class="btn s" style="color:#DC2626;border-color:#DC2626" onclick="atDel()">🗑️ Excluir atendimento</button>'}
+function clOpen(n){clN=n;if(!S.trab.ats.some(a=>ATK(a.cli)==ATK(n)))return;closeM();clR();$('mCl').classList.add('on')}
+function clNovo(){const c=clC(clN);closeM();atNovo({cli:c.u.cli,tel:c.tel,loc:c.loc,srv:[]})}
+function clR(){const c=clC(clN),L=c.L;if(!L.length){closeM();return}const u=c.u,pg=L.filter(a=>a.st=='atendido'&&a.pago).reduce((x,a)=>x+ATT(a),0),rc=L.filter(a=>a.st=='atendido'&&!a.pago).reduce((x,a)=>x+ATT(a),0);
+ $('clH').textContent='👤 '+u.cli;
+ $('clB').innerHTML=(c.tel?'<div class="row"><a class="btn s" style="margin:0;text-align:center;text-decoration:none" href="tel:'+esc(c.tel.replace(/[^\d+]/g,''))+'">📞 Ligar</a><button class="btn s" style="margin:0" onclick="atZap('+c.tid+')">💬 WhatsApp</button></div>':'')+(c.loc?'<small style="color:var(--mu)">📍 '+esc(c.loc)+'</small>':'')
+  +'<div class="g2" style="margin-top:10px"><div class="kpi"><span>✅ Já pago</span><strong>'+R(pg)+'</strong></div><div class="kpi"><span>💰 A receber</span><strong>'+R(rc)+'</strong></div></div><button class="btn" onclick="clNovo()">＋ Novo atendimento</button>'+L.map(atCard).join('')}
 function cxv(v){['dia','ct'].forEach(k=>$('cx-'+k).style.display=k==v?'':'none');document.querySelectorAll('#cxs button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
 const TABS={pessoal:['inicio','veic','casa','plano'],trabalho:['inicio','veic','prof']};
 function aplicaEsp(){document.documentElement.dataset.esp=S.esp;document.querySelectorAll('#espS button').forEach(b=>b.classList.toggle('on',b.dataset.e==S.esp));
@@ -580,8 +675,8 @@ function home(){
  const pos=ks.filter(k=>c[k]>0).sort((a,b)=>c[b]-c[a]);
  $('ins').innerHTML=!pos.length?'💡 Registre seu primeiro gasto para ver a análise aqui.':pos.length==1?'💡 Todo o gasto do período foi com <b>'+pos[0]+'</b>.':'💡 Seu maior gasto foi com <b>'+pos[0]+'</b> e o menor foi com <b>'+pos[pos.length-1]+'</b>.';
  const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')'})));
- $('alL').innerHTML=(ag.map(r=>'<div class="al">🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button></div>').join('')+sgAl().concat(ctAl(),plAl(),ecoAl(),manAl(),bkAl()).map(t=>'<div class="al">'+t+'</div>').join('')+pend.map(i=>'<div class="al">⏳ <b>Pendente na oficina:</b> '+esc(i.t)+'</div>').join(''))||'<div class="emp">Nenhum alerta por enquanto.</div>';
- $('dot').style.display=(ag.length+pend.length+sgAl().length+ctAl().length+plAl().length+ecoAl().length+manAl().length+bkAl().length)?'block':'none';
+ $('alL').innerHTML=(ag.map(r=>'<div class="al">🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button></div>').join('')+sgAl().concat(ctAl(),plAl(),ecoAl(),manAl(),agAl(),bkAl()).map(t=>'<div class="al">'+t+'</div>').join('')+pend.map(i=>'<div class="al">⏳ <b>Pendente na oficina:</b> '+esc(i.t)+'</div>').join(''))||'<div class="emp">Nenhum alerta por enquanto.</div>';
+ $('dot').style.display=(ag.length+pend.length+sgAl().length+ctAl().length+plAl().length+ecoAl().length+manAl().length+agAl().length+bkAl().length)?'block':'none';
 }
 function pagar(id){const r=S.regs.find(x=>x.id==id);if(r){r.ag=false;save();render();toast('Registro marcado como pago')}}
 
@@ -703,7 +798,7 @@ function relGerar(){const sc=$('rlS').value,per=relPer,det=relDet;let pf='',pl='
  h+='<div class="foot">Relatório de controle pessoal, gerado a partir de lançamentos informados pelo usuário (gastos já pagos e ganhos registrados). Não substitui notas fiscais, recibos ou orientação de um contador. AutoGestor Pro • emitido em '+new Date().toLocaleDateString('pt-BR')+'</div>';
  $('rep').innerHTML=h;closeM();try{window.print()}catch(e){toast('Abra o link direto no navegador para imprimir')}}
 
-const nReg=()=>S.cars.length+S.regs.length+S.casa.gastos.length+S.contas.itens.length+S.casa.listas.length+S.casa.compras.length+S.obj.length+S.trab.ganhos.length+S.trab.gastos.length;
+const nReg=()=>S.cars.length+S.regs.length+S.casa.gastos.length+S.contas.itens.length+S.casa.listas.length+S.casa.compras.length+S.obj.length+S.trab.ganhos.length+S.trab.gastos.length+S.trab.ats.length;
 function undoInfo(){try{const p=JSON.parse(localStorage.getItem(KEY+'_prev'));return p&&p.d?p:null}catch(e){return null}}
 function bkStat(){const e=$('bks'),u=S.bk.ult;if(e)e.textContent=u?'Último backup: '+new Date(u).toLocaleDateString('pt-BR')+' ('+Math.floor((Date.now()-u)/864e5)+' dia(s) atrás)':'Nenhum backup feito neste aparelho ainda.'}
 function openBk(){$('bk').value=JSON.stringify(S);bkStat();const p=undoInfo(),b=$('bkU');b.style.display=p?'':'none';if(p)b.textContent='↩️ Desfazer última restauração ('+new Date(p.em).toLocaleDateString('pt-BR')+')';$('mBk').classList.add('on')}
@@ -728,7 +823,7 @@ function voz(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
  if(!SR){toast('Seu navegador não tem ditado por voz. Preencha à mão.');return}
  try{const r=new SR();r.lang='pt-BR';r.onresult=e=>{const s=e.results[0][0].transcript,n=s.match(/\d+[.,]?\d*/);$('rds').value=s;if(n&&!$('rp').value)$('rp').value=n[0].replace(',','.');toast('Confira os dados ditados')};r.onerror=()=>toast('Não consegui ouvir. Tente de novo.');r.start();toast('🎙️ Fale agora: serviço e valor')}catch(e){toast('Não foi possível usar o microfone')}}
 
-function render(){home();hist();chk();man();calc();casa();lstR('trab');contas();plano();trR();aplicaEsp()}
+function render(){home();hist();chk();man();calc();casa();lstR('trab');contas();plano();trR();agR();aplicaEsp()}
 applyTheme(S.tema||(matchMedia('(prefers-color-scheme: dark)').matches?'noturno':'executivo'));
 const CC=['Mercado','Lanche na rua','Transporte','Lazer','Saúde','Outros'],cmes=dt=>inM(dt,0);
 const CL={compra:null,servico:null};let tl=null,ltp='compra',itEd=null;
@@ -901,7 +996,7 @@ function vsR(){const y=new Date().getFullYear();
   const g=S.regs.filter(r=>!r.ag&&L.some(c=>c.id==r.vid)&&new Date(r.dt).getFullYear()==y).reduce((a,r)=>a+tot(r),0);
   return '<button class="btn s" style="display:flex;justify-content:space-between" data-t="'+t+'" onclick="tgCat(this.dataset.t)"><span>'+i+' '+n+' ('+L.length+')</span><span>'+R(g)+' no ano</span></button>'
   +(vopen==t?L.map(c=>'<button class="btn '+(c.id==car().id?'':'s')+'" style="margin:4px 0 4px 14px;width:calc(100% - 14px)" onclick="setV('+c.id+')">'+ic(c)+esc(vn(c))+'</button>').join(''):'')}).join('')||'<div class="emp">Nenhum veículo ainda.</div>'}
-function limpar(){if(confirm('Apagar TODOS os dados deste aparelho?')&&confirm('Tem certeza? Não dá para desfazer, a menos que você tenha um backup.')){S=Object.assign({},S,{cars:[],cur:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},obj:[],trab:{ativ:'',ganhos:[],gastos:[],cur:0}});try{localStorage.removeItem(KEY+'_prev')}catch(e){}save();render();go('inicio');toast('Dados apagados')}}
+function limpar(){if(confirm('Apagar TODOS os dados deste aparelho?')&&confirm('Tem certeza? Não dá para desfazer, a menos que você tenha um backup.')){S=Object.assign({},S,{cars:[],cur:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},obj:[],trab:{ativ:'',ganhos:[],gastos:[],ats:[],cur:0}});try{localStorage.removeItem(KEY+'_prev')}catch(e){}save();render();go('inicio');toast('Dados apagados')}}
 function vsub(p){document.querySelectorAll('.vp').forEach(e=>e.style.display=e.id=='vp-'+p?'':'none');document.querySelectorAll('#vsub button').forEach(b=>b.classList.toggle('on',b.dataset.p==p))}
 function fn(){const s=car().fin,e=$('fn');
  if(!s){e.innerHTML='<div class="ct">🏦 Financiamento</div><button class="btn s" style="margin:0" onclick="openFn()">+ Adicionar financiamento</button>';return}
