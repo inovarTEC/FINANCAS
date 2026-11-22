@@ -67,6 +67,7 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .chips{display:flex;gap:6px;overflow-x:auto;margin:10px 0}.chips button{flex-shrink:0;border:1px solid var(--bd);background:var(--ph);color:var(--mu);border-radius:20px;padding:6px 12px;font-weight:700;font-size:calc(12px*var(--fs));cursor:pointer}
 .chips button.on{background:var(--pr);color:var(--pt)}
 .lk{cursor:pointer;text-decoration:underline dotted}
+.lk,#ctL,#sg,#fn,#manL,#cL,#plT,#gL,#agL{scroll-margin-top:90px}
 .tg{display:inline-block;font-size:calc(10.5px*var(--fs));font-weight:800;padding:1px 7px;border-radius:10px;background:var(--ph);border:1px solid var(--bd);color:var(--mu);margin-right:6px}
 .cd{touch-action:manipulation;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:2px solid transparent}.cd b{min-width:60px}.cd span{flex:1;min-width:0;color:var(--mu);font-size:calc(12.5px*var(--fs));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cd em{font-style:normal;font-weight:800}
 .cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}.cg i{font-style:normal;text-align:center;color:var(--mu);font-size:calc(11px*var(--fs));font-weight:700}
@@ -765,16 +766,16 @@ function home(){
 }
 let alSh=false,alVis=0;
 function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'};let m;while(m=x.h.match(/^<!--(P|K):([^>]*?)-->/)){if(m[1]=='P'){const q=m[2].split(':');x.p=q[0];x.car=+q[1]}else{const q=m[2].split('|');x.k=q[0];x.m=q[1]}x.h=x.h.slice(m[0].length)}return x},
- add=(L,p,tab)=>L.forEach(h=>{const x=P(h);if(x.p=='geral')x.p=p;x.tab=tab;it.push(x)});
+ add=(L,p,tab,sub,anc)=>L.forEach(h=>{const x=P(h);if(x.p=='geral')x.p=p;x.tab=tab;x.sub=sub;x.anc=anc=='sg'&&/Financiamento/.test(x.h)?'fn':anc;it.push(x)});
  ag.forEach(r=>{const cr=S.cars.find(c=>c.id==r.vid);it.push({h:'🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button>',p:cr?cr.uso:'pessoal',car:0,tab:'',k:'',m:'f'})});
- add(sgAl(),'pessoal','veic');add(ctAl(),'pessoal','casa');add(plAl(),'pessoal','plano');add(ecoAl(),'pessoal','casa');add(manAl(),'pessoal','veic');add(agAl(),'trabalho','prof');add(bkAl(),'geral','');
- pend.forEach(i=>it.push({h:'⏳ <b>Pendente na oficina:</b> '+esc(i.t),p:i.p,car:i.car,tab:'veic',k:i.k,m:'s'}));
+ add(sgAl(),'pessoal','veic','seg','sg');add(ctAl(),'pessoal','casa','ct','ctL');add(plAl(),'pessoal','plano','','plT');add(ecoAl(),'pessoal','casa','dia','gL');add(manAl(),'pessoal','veic','ofi','manL');add(agAl(),'trabalho','prof','rec','agL');add(bkAl(),'geral','','','');
+ pend.forEach(i=>it.push({h:'⏳ <b>Pendente na oficina:</b> '+esc(i.t),p:i.p,car:i.car,tab:'veic',sub:'ofi',anc:'cL',k:i.k,m:'s'}));
  it.forEach(x=>x.u=/venceu|vence hoje|atrasad|vencida|vence agora|encerrada|passaram/i.test(x.h)||x.h.includes('⚠️')?0:3);
  const rk=x=>x.u+(x.p==S.esp?0:x.p=='geral'?1:2),TG={trabalho:'💼 Trabalho',pessoal:'👤 Pessoal'},NM2={trabalho:'Trabalho',pessoal:'Pessoal'},sn=S.snooze||{},hd=x=>x.m!='f'&&x.k&&sn[x.k]&&sn[x.k]>hoje();
  it.sort((x,y)=>rk(x)-rk(y));
  const vis=it.filter(x=>!hd(x)),hid=it.filter(hd);alVis=vis.length;
  const row=x=>{const sz=x.m!='f'&&x.k,hh=hd(x),hb=x.h.includes('onclick'),B='<button class="mini" style="margin:6px 4px 0 0" onclick="',
-  b=(x.tab&&!hb?B+'alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+')">Abrir'+(x.p!=S.esp&&NM2[x.p]?' em '+NM2[x.p]:'')+' ›</button>':'')+(sz?(hh?B+'alBack(\''+x.k+'\')">↩ Mostrar de novo</button>':B+'alSoneca(\''+x.k+'\',\''+x.m+'\')">'+(x.m=='d'?'✖ Dispensar':'⏰ Lembrar amanhã')+'</button>'):'');
+  b=(x.tab&&!x.h.includes('class="lk"')?B+'alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+',\''+(x.sub||'')+'\',\''+(x.anc||'')+'\',\''+(sz?x.k:'')+'\',\''+(sz?x.m:'')+'\')">Abrir'+(x.p!=S.esp&&NM2[x.p]?' em '+NM2[x.p]:'')+' ›</button>':'')+(sz?(hh?B+'alBack(\''+x.k+'\')">↩ Mostrar de novo</button>':B+'alSoneca(\''+x.k+'\',\''+x.m+'\')">'+(x.m=='d'?'✖ Dispensar':'⏰ Lembrar amanhã')+'</button>'):'');
   return '<div class="al">'+(hh?'<span class="tg">💤</span>':'')+(TG[x.p]?'<span class="tg">'+TG[x.p]+'</span>':'')+x.h+(b?(hb?'':'<br>')+b:'')+'</div>'};
  return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
@@ -786,7 +787,12 @@ function voltou(){const t=$('toast');if(t){clearTimeout(t._t);t.style.display='n
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible')voltou()});
 window.addEventListener('pageshow',e=>{if(e.persisted)voltou()});
 function alBack(k){if(S.snooze)delete S.snooze[k];save();render()}
-function alIr(p,t,car){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car;save()}if(S.esp!=p){setEsp(p);toast('Perfil trocado para '+(p=='trabalho'?'Trabalho':'Pessoal'))}else if(car)render();go(t)}
+function alIr(p,t,car,sub,anc,k,m){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car}
+ const adia=k&&m&&m!='f';if(adia){S.snooze=S.snooze||{};S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1)}
+ if(car||adia)save();
+ if(S.esp!=p){setEsp(p);toast('Perfil trocado para '+(p=='trabalho'?'Trabalho':'Pessoal'))}else{render();if(adia)toast('Aviso adiado até amanhã')}
+ go(t);if(t=='veic'&&sub)vsub(sub);else if(t=='casa'&&sub)cxv(sub);else if(t=='prof'){trv('ag');agVs('lista');if(sub=='rec'){agF='rec';agR()}}
+ if(anc)setTimeout(()=>{const e=$(anc);if(e)e.scrollIntoView({block:'start',behavior:'smooth'})},80)}
 function ctPagar(id){ctPg(id);toast('Conta marcada como paga')}
 function pagar(id){const r=S.regs.find(x=>x.id==id);if(r){r.ag=false;save();render();toast('Registro marcado como pago')}}
 
