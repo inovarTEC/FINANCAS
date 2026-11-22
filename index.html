@@ -648,7 +648,7 @@ function anTpSet(k){anTpV=k;anTpR()}
 function atTpS(v){const a=atAch(atId);if(!a||!TPN[v])return;a.tp=v;atRef()}
 const clC=n=>{const L=S.trab.ats.filter(a=>ATK(a.cli)==ATK(n)).sort((x,y)=>x.dt<y.dt?1:-1),t=L.find(a=>a.tel);return{L,u:L[0],tel:t?t.tel:'',tid:t?t.id:0,loc:(L.find(a=>a.loc)||{}).loc||'',geo:(L.find(a=>a.geo)||{}).geo||''}};
 function mapaUrl(g,l){g=(g||'').trim();if(/^https?:\/\//i.test(g))return g;const m=g.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)$/);if(m)return 'https://www.google.com/maps?q='+m[1]+','+m[2];return l?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l):''}
-function mapaAbrir(g,l){const u=mapaUrl(g,l);if(!u){toast('Sem localização nem endereço cadastrado');return}window.open(u,'_blank','noopener')}
+function mapaAbrir(g,l){const u=mapaUrl(g,l);if(!u){toast('Sem localização nem endereço cadastrado');return}abrirExt(u)}
 function atGeo(){if(!navigator.geolocation){toast('Localização indisponível neste aparelho');return}toast('Buscando localização…');navigator.geolocation.getCurrentPosition(p=>{if(!atAch(atId)||!$('atG'))return;$('atG').value=p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6);atSet();toast('Localização salva')},()=>toast('Não foi possível obter a localização'),{enableHighAccuracy:true,timeout:15000})}
 function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT').value=c.tel;if(!$('anL').value)$('anL').value=c.loc}}
 function atNovoSave(){const cli=$('anC').value.trim().slice(0,60),d=$('anD').value,h=$('anS').value;if(!cli){toast('Informe o nome do cliente');return}
@@ -661,7 +661,7 @@ function atSai(id){const a=atAch(id);if(!a)return;a.sai=nowL();a.st='atendido';a
 function atPaga(id){const a=atAch(id);if(!a)return;a.pago=true;a.pgdt=hoje();atRef();toast('Pagamento registrado')}
 function atRe(id){const a=atAch(id);if(a){closeM();atNovo(a)}}
 function atZap(id){const a=atAch(id);if(!a)return;let n=a.tel.replace(/\D/g,'');if(n.length<10){toast('Telefone inválido');return}if(n.length<=11)n='55'+n;
- window.open('https://wa.me/'+n+'?text='+encodeURIComponent('Olá, '+a.cli+'! Confirmando nosso atendimento em '+dBR(a.dt)+' às '+a.dt.slice(11)+'.'),'_blank')}
+ abrirExt(zapUrl(n,'Olá, '+a.cli+'! Confirmando nosso atendimento em '+dBR(a.dt)+' às '+a.dt.slice(11)+'.'))}
 function atSet(){const a=atAch(atId);if(!a)return;const c=$('atC').value.trim().slice(0,60),d=$('atD').value,h=$('atH').value,e=$('atE').value,x=$('atS').value;
  if(!c){toast('O nome do cliente é obrigatório');atR();return false}if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!/^\d{2}:\d{2}$/.test(h)){toast('Data ou hora inválida');atR();return false}
  if(e&&x&&x<e){toast('A saída é antes da entrada');atR();return false}
@@ -716,7 +716,7 @@ function recGerar(){const a=atAch(atId);if(!a)return;if(!(ATT(a)>0)){toast('Lanc
   +'<div class="foot">'+(fz?'Recibo simples de controle, emitido pelo prestador.':'Orçamento do prestador, sujeito a confirmação.')+' Não é nota fiscal e não tem validade fiscal. AutoGestor Pro • emitido em '+new Date().toLocaleDateString('pt-BR')+'</div>';
  try{window.print()}catch(e){toast('Abra o link direto no navegador para imprimir')}}
 function recZap(){const a=atAch(atId);if(!a)return;if(!(ATT(a)>0)){toast('Lance os serviços antes de enviar');return}let n=a.tel.replace(/\D/g,'');if(n.length>=10&&n.length<=11)n='55'+n;else if(n.length<10)n='';
- window.open('https://wa.me/'+n+'?text='+encodeURIComponent(recTxt(a)),'_blank')}
+ abrirExt(zapUrl(n,recTxt(a)))}
 function usaAt(){const v=cv(),ds=v.km*v.ckm+(v.inc?v.dia:0);if(!(v.km>0||v.mo>0)){toast('Informe a distância ou a mão de obra primeiro');return}
  const L=S.trab.ats.filter(a=>a.st=='agendado'||(a.st=='atendido'&&!a.pago)).sort((x,y)=>x.dt<y.dt?-1:1);if(!L.length){toast('Crie um atendimento na Agenda primeiro');return}
  $('usI').textContent='Vai somar '+R(ds)+' de deslocamento'+(v.mo>0?' e '+R(v.mo)+' de mão de obra':'')+' como serviços do atendimento escolhido.';
@@ -779,6 +779,12 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
+const iosApp=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches);
+function zapUrl(n,t){return iosApp()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
+function abrirExt(u){const a=document.createElement('a');a.href=u;if(/^https?:/i.test(u)){a.target='_blank';a.rel='noopener noreferrer'}a.style.display='none';document.body.appendChild(a);a.click();a.remove()}
+function voltou(){const t=$('toast');if(t){clearTimeout(t._t);t.style.display='none'}if(!document.querySelector('.mo.on'))document.documentElement.classList.remove('lock');const e=document.activeElement;if(e&&e!==document.body&&e.blur)e.blur();render()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible')voltou()});
+window.addEventListener('pageshow',e=>{if(e.persisted)voltou()});
 function alBack(k){if(S.snooze)delete S.snooze[k];save();render()}
 function alIr(p,t,car){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car;save()}if(S.esp!=p){setEsp(p);toast('Perfil trocado para '+(p=='trabalho'?'Trabalho':'Pessoal'))}else if(car)render();go(t)}
 function ctPagar(id){ctPg(id);toast('Conta marcada como paga')}
@@ -849,7 +855,7 @@ function calc(){const st=stats();$('pk').placeholder=(st.ckm||0.55).toFixed(2);$
  const v=cv(),ck=v.km*v.ckm,cd=v.inc?v.dia:0,T=ck+cd+v.mo;
  $('cr').innerHTML='<div class="cl"><span>⛽ Combustível e desgaste ('+v.km+' km)</span><b>'+R(ck)+'</b></div><div class="cl"><span>📅 Cota diária do carro</span><b>'+R(cd)+'</b></div><div class="cl"><span>👷 Seu lucro livre (mão de obra)</span><b>'+R(v.mo)+'</b></div><div class="cl t"><span>Cobrar do cliente</span><span>'+R(T)+'</span></div>'}
 function orc(){const v=cv(),ck=v.km*v.ckm,cd=v.inc?v.dia:0;return 'Orçamento — '+(S.trab.ativ||'Serviço')+'\nDeslocamento ('+v.km+' km): '+R(ck)+'\nCusto do veículo (diária): '+R(cd)+'\nMão de obra: '+R(v.mo)+'\nTotal: '+R(ck+cd+v.mo)}
-function zap(){window.open('https://wa.me/?text='+encodeURIComponent(orc()),'_blank')}
+function zap(){abrirExt(zapUrl('',orc()))}
 function copiar(){try{navigator.clipboard.writeText(orc()).then(()=>toast('Orçamento copiado'),()=>toast('Não foi possível copiar'))}catch(e){toast('Não foi possível copiar')}}
 
 /* ===== Relatório de despesas (Etapa 5) ===== */
