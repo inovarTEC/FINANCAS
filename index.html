@@ -67,10 +67,10 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .chips{display:flex;gap:6px;overflow-x:auto;margin:10px 0}.chips button{flex-shrink:0;border:1px solid var(--bd);background:var(--ph);color:var(--mu);border-radius:20px;padding:6px 12px;font-weight:700;font-size:calc(12px*var(--fs));cursor:pointer}
 .chips button.on{background:var(--pr);color:var(--pt)}
 .lk{cursor:pointer;text-decoration:underline dotted}
-.cd{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:2px solid transparent}.cd b{min-width:60px}.cd span{flex:1;min-width:0;color:var(--mu);font-size:calc(12.5px*var(--fs));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cd em{font-style:normal;font-weight:800}
+.cd{touch-action:manipulation;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:2px solid transparent}.cd b{min-width:60px}.cd span{flex:1;min-width:0;color:var(--mu);font-size:calc(12.5px*var(--fs));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cd em{font-style:normal;font-weight:800}
 .cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}.cg i{font-style:normal;text-align:center;color:var(--mu);font-size:calc(11px*var(--fs));font-weight:700}
-.mc{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;font-weight:700}.mc small{font-size:calc(10px*var(--fs));min-height:1em}
-.cz{background:rgba(128,128,128,.15)}.cv{background:rgba(22,163,74,.22)}.ca{background:rgba(245,158,11,.32)}.cr{background:rgba(220,38,38,.3)}.hj{box-shadow:inset 0 0 0 2px var(--pr)}.sel{border-color:var(--pr)}
+.mc{touch-action:manipulation;aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;font-weight:700}.mc small{font-size:calc(10px*var(--fs));min-height:1em}
+.cz{background:rgba(128,128,128,.15)}.cv{background:rgba(22,163,74,.22)}.ca{background:rgba(245,158,11,.32)}.cr{background:rgba(220,38,38,.3)}.hj{box-shadow:inset 0 0 0 2px var(--pr)}.sq{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;border:1px solid var(--bd)}
 .lg{font-size:calc(11.5px*var(--fs));color:var(--mu);margin:6px 0}
 .chk{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd);cursor:pointer}
 .chk b{width:24px;height:24px;border-radius:7px;border:2px solid var(--pr);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
@@ -606,32 +606,33 @@ function agAl(){const h=hoje(),o=[];S.trab.ats.forEach(a=>{if(a.st!='agendado'||
 function atCard(a){const s=atS(a),b=(t,fn)=>'<button class="mini" onclick="event.stopPropagation();'+fn+'">'+t+'</button>',tot=ATT(a),
  ac={agendado:b('📍 Cheguei','atChega('+a.id+')'),atrasado:b('📍 Cheguei','atChega('+a.id+')')+b('🔁 Reagendar','atRe('+a.id+')'),andamento:b('✔ Saí / Concluir','atSai('+a.id+')'),receber:b('💰 Marcar pago','atPaga('+a.id+')'),pago:'',nao:b('🔁 Reagendar','atRe('+a.id+')')}[s]+(a.tel&&['agendado','atrasado','andamento','nao'].includes(s)?b('💬','atZap('+a.id+')'):'');
  return '<div class="it" onclick="atOpen('+a.id+')" style="cursor:pointer"><div style="font-size:22px">'+ATI[s]+'</div><div class="b"><div class="t"><span>'+(['agendado','atrasado','andamento'].includes(s)?a.dt.slice(11)+' — ':'')+(tpOf(a)!='servico'?TPI[tpOf(a)]+' ':'')+esc(a.cli)+'</span><span>'+(tot?R(tot):'')+'</span></div><small>'+ATL[s]+' • '+dBR(a.dt)+(a.loc?' • '+esc(a.loc):'')+(atTempo(a)?' • '+atTempo(a):'')+(a.pago?' • pago em '+dBR(a.pgdt):'')+'</small>'+(ac?'<div style="margin-top:6px">'+ac+'</div>':'')+'</div></div>'}
-let agV='lista',agRf=hoje(),agDia=null;
+let agV='lista',agRf=hoje(),agDia=null,agBack=null;
 const MESL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'],DSEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const capD=()=>S.trab.cap||4,iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
 const addD=(d,n)=>{const x=new Date(d+'T12:00');x.setDate(x.getDate()+n);return iso(x)},dWk=d=>new Date(d+'T12:00').getDay();
 const dAts=d=>S.trab.ats.filter(a=>ATD(a)==d&&a.st!='nao').sort((x,y)=>x.dt<y.dt?-1:1);
 const dCor=d=>{const n=dAts(d).length;return dWk(d)==0&&!n?'cz':!n?'cv':n<capD()?'ca':'cr'};
 function agVw(){$('agVw').innerHTML=[['lista','📋 Lista'],['semana','🗓️ Semana'],['mes','📆 Mês']].map(([k,t])=>'<button class="'+(agV==k?'on':'')+'" onclick="agVs(\''+k+'\')">'+t+'</button>').join('')}
-function agVs(k){agV=k;agDia=null;agRf=hoje();agR()}
-function agNav(n){agDia=null;if(agV=='semana')agRf=addD(agRf,7*n);else{const x=new Date(agRf.slice(0,7)+'-01T12:00');x.setMonth(x.getMonth()+n);agRf=iso(x)}agR()}
-function agPick(d){agDia=agDia==d?null:d;agR()}
+function agVs(k){agV=k;agDia=null;agBack=null;agRf=hoje();agR()}
+function agNav(n){if(agV=='semana')agRf=addD(agRf,7*n);else{const x=new Date(agRf.slice(0,7)+'-01T12:00');x.setMonth(x.getMonth()+n);agRf=iso(x)}agR()}
+function agPick(d){agBack=agV;agV='lista';agDia=d;agR()}
+function agVolta(){agV=agBack||'lista';agBack=null;agDia=null;agR()}
 function agCap(){const v=prompt('Quantos atendimentos no dia você considera dia cheio?',capD());if(v===null)return;const n=Math.round(+v);if(!(n>=1&&n<=20)){toast('Informe de 1 a 20');return}S.trab.cap=n;save();agR()}
 function agCalR(){let h,t;
  if(agV=='semana'){const ini=addD(agRf,-((dWk(agRf)+6)%7)),fim=addD(ini,6);t=dBR(ini).slice(0,5)+' a '+dBR(fim).slice(0,5);h='';
   for(let i=0;i<7;i++){const d=addD(ini,i),L=dAts(d),w=dWk(d),tx=L.length?L.slice(0,2).map(a=>esc(a.cli.split(' ')[0])).join(', ')+(L.length>2?' +'+(L.length-2):''):w==0?'Folga':w==6?'Livre (até 12h)':'Livre';
-   h+='<div class="cd '+dCor(d)+(d==hoje()?' hj':'')+(d==agDia?' sel':'')+'" onclick="agPick(\''+d+'\')"><b>'+DSEM[w]+' '+d.slice(8)+'</b><span>'+tx+'</span><em>'+(L.length||'')+'</em></div>'}}
+   h+='<div class="cd '+dCor(d)+(d==hoje()?' hj':'')+'" onclick="agPick(\''+d+'\')"><b>'+DSEM[w]+' '+d.slice(8)+'</b><span>'+tx+'</span><em>'+(L.length||'')+'</em></div>'}}
  else{const y=+agRf.slice(0,4),m=+agRf.slice(5,7)-1,n=new Date(y,m+1,0).getDate(),off=(new Date(y,m,1).getDay()+6)%7;t=MESL[m]+' '+y;
   h='<div class="cg">'+['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>'<i>'+x+'</i>').join('')+'</div><div class="cg">'+'<div></div>'.repeat(off);
   for(let i=1;i<=n;i++){const d=y+'-'+String(m+1).padStart(2,'0')+'-'+String(i).padStart(2,'0'),c=dAts(d).length;
-   h+='<div class="mc '+dCor(d)+(d==hoje()?' hj':'')+(d==agDia?' sel':'')+'" onclick="agPick(\''+d+'\')">'+i+'<small>'+(c||(dWk(d)==6?'½':''))+'</small></div>'}
+   h+='<div class="mc '+dCor(d)+(d==hoje()?' hj':'')+'" onclick="agPick(\''+d+'\')">'+i+'<small>'+(c||(dWk(d)==6?'½':''))+'</small></div>'}
   h+='</div>'}
- $('agCal').innerHTML='<div class="cl"><button class="mini" aria-label="Anterior" onclick="agNav(-1)">‹</button><b>'+t+'</b><button class="mini" aria-label="Próximo" onclick="agNav(1)">›</button></div>'+h+'<div class="lg">🟩 livre • 🟨 com vaga • 🟥 cheio ('+capD()+'+) • ⬜ folga • ½ sábado até 12h <button class="mini" onclick="agCap()">⚙️ Cheio = '+capD()+'</button></div>';
- const e=$('agL');if(!agDia){e.innerHTML='<div class="emp">Toque num dia para ver os clientes.</div>';return}
- const L=S.trab.ats.filter(a=>ATD(a)==agDia).sort((x,y)=>x.dt<y.dt?-1:1);
- e.innerHTML='<div class="cl"><b>'+DSEM[dWk(agDia)]+' '+dBR(agDia)+' • '+L.length+' atendimento'+(L.length==1?'':'s')+'</b><button class="mini" aria-label="Fechar dia" onclick="agPick(\''+agDia+'\')">✖</button></div>'+(L.length?L.map(atCard).join(''):'<div class="emp">Dia livre.</div>')}
-function agR(){const e=$('agL');if(!e)return;const A=S.trab.ats;agVw();$('agC').style.display=agV=='lista'?'':'none';
- if(agV!='lista')agCalR();else{
+ $('agCal').innerHTML='<div class="cl"><button class="mini" aria-label="Anterior" onclick="agNav(-1)">‹</button><b>'+t+'</b><button class="mini" aria-label="Próximo" onclick="agNav(1)">›</button></div>'+h+'<div class="lg"><span class="sq cv"></span> livre • <span class="sq ca"></span> com vaga • <span class="sq cr"></span> cheio ('+capD()+'+) • <span class="sq cz"></span> folga • ½ sábado até 12h <button class="mini" onclick="agCap()">⚙️ Cheio = '+capD()+'</button></div>';
+ $('agL').innerHTML=''}
+function agDiaR(){const L=S.trab.ats.filter(a=>ATD(a)==agDia).sort((x,y)=>x.dt<y.dt?-1:1);
+ $('agL').innerHTML='<div class="cl"><b>'+DSEM[dWk(agDia)]+' '+dBR(agDia)+' • '+L.length+' atendimento'+(L.length==1?'':'s')+'</b>'+(agBack?'<button class="mini" onclick="agVolta()">← Voltar</button>':'')+'</div>'+(L.length?L.map(atCard).join(''):'<div class="emp">Dia livre.</div>')}
+function agR(){const e=$('agL');if(!e)return;const A=S.trab.ats;agVw();$('agC').style.display=agV=='lista'&&!agDia?'':'none';if(agV=='lista')$('agCal').innerHTML='';
+ if(agV!='lista')agCalR();else if(agDia)agDiaR();else{
  $('agC').innerHTML=AGF.map(([k,t,f])=>{const L=A.filter(f);return '<button class="'+(agF==k?'on':'')+'" onclick="agFil(\''+k+'\')">'+t+' '+(k=='rec'?R(L.reduce((x,a)=>x+ATT(a),0)):L.length)+'</button>'}).join('');
  const f=(AGF.find(x=>x[0]==agF)||AGF[0])[2],asc=agF=='hoje'||agF=='prox',L=A.filter(f).sort((x,y)=>(x.dt<y.dt?-1:1)*(asc?1:-1));
  e.innerHTML=L.length?L.map(atCard).join(''):'<div class="emp">'+({hoje:'Nenhum atendimento hoje.',prox:'Nenhum atendimento marcado pela frente.',atend:'Nenhum atendimento concluído ainda.',nao:'Nenhum atendimento perdido.',rec:'Nada a receber.'})[agF]+'</div>';}
@@ -639,7 +640,7 @@ function agR(){const e=$('agL');if(!e)return;const A=S.trab.ats;agVw();$('agC').
 function agFil(k){agF=k;agR()}
 function atRef(){save();render();if($('mAt').classList.contains('on'))atR();if($('mCl').classList.contains('on'))clR()}
 function atNovo(p){atFrom=p?p.id:null;atCp=p?p.srv.map(x=>({d:x.d,v:x.v})):[];$('anH').textContent=p&&p.st!=null?'Reagendar atendimento':'Novo atendimento';
- $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anD').value=(agV!='lista'&&agDia)||hoje();$('anS').value='08:00';anTpV=p?tpOf(p):'servico';anTpR();$('mAn').classList.add('on')}
+ $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anD').value=agDia||hoje();$('anS').value='08:00';anTpV=p?tpOf(p):'servico';anTpR();$('mAn').classList.add('on')}
 let anTpV='servico';
 function anTpR(){$('anTp').innerHTML=Object.keys(TPN).map(k=>'<button class="'+(anTpV==k?'on':'')+'" onclick="anTpSet(\''+k+'\')">'+TPI[k]+' '+TPN[k]+'</button>').join('');const d=$('anD').value,h=$('anS').value,e=$('anHint');e.style.display=anTpV=='ocorrencia'&&d&&h&&dentroExp(d,h)?'':'none';e.textContent='💡 Ocorrência costuma ser fora do expediente (seg–sex 8h–18h, sáb 8h–12h). Você pode manter este horário.'}
 function anTpSet(k){anTpV=k;anTpR()}
@@ -652,7 +653,7 @@ function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT'
 function atNovoSave(){const cli=$('anC').value.trim().slice(0,60),d=$('anD').value,h=$('anS').value;if(!cli){toast('Informe o nome do cliente');return}
  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast('Escolha a data');return}if(!/^\d{2}:\d{2}$/.test(h)){toast('Escolha a hora');return}if(S.trab.ats.length>=3000){toast('Limite de atendimentos atingido');return}
  S.trab.ats.push({id:Date.now(),cli,tel:$('anT').value.trim().slice(0,20),loc:$('anL').value.trim().slice(0,80),dt:d+'T'+h,tp:anTpV,geo:clC(cli).geo,st:'agendado',ent:'',sai:'',srv:atCp.map(x=>({d:x.d,v:x.v})),mat:[],pago:false,pgdt:''});
- if(atFrom){const o=atAch(atFrom);if(o&&o.st=='agendado'){o.st='nao';o.ent='';o.sai=''}}atFrom=null;atCp=[];agF=d==hoje()?'hoje':d>hoje()?'prox':'nao';closeM();atRef();toast('Atendimento agendado para '+dBR(d)+' às '+h)}
+ if(atFrom){const o=atAch(atFrom);if(o&&o.st=='agendado'){o.st='nao';o.ent='';o.sai=''}}atFrom=null;atCp=[];agF=d==hoje()?'hoje':d>hoje()?'prox':'nao';if(agDia)agDia=d;closeM();atRef();toast('Atendimento agendado para '+dBR(d)+' às '+h)}
 function atOpen(id){if(!atAch(id))return;closeM();atId=id;atR();$('mAt').classList.add('on')}
 function atChega(id){const a=atAch(id);if(!a)return;a.ent=nowL();a.sai='';save();render();atOpen(id);toast('Entrada registrada às '+a.ent.slice(11))}
 function atSai(id){const a=atAch(id);if(!a)return;a.sai=nowL();a.st='atendido';atRef();toast('Serviço concluído'+(ATT(a)?'. Total '+R(ATT(a)):''))}
