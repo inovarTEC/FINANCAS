@@ -415,7 +415,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const R=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const KEY='agp1',TH=['executivo','noturno','facil'],NM={c:'Abastecimento',o:'Oficina',i:'IPVA / taxas',s:'Seguro',f:'Financiamento'},IC={c:'⛽',o:'🔧',i:'📄',s:'🛡️',f:'🏦'};
 const COL=['#10B981','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#14B8A6'],TI={carro:'🚘 ',moto:'🏍️ ',bike:'🚲 ',ebike:'⚡🚲 '};
-let S={v:6,cars:[],cur:null,esp:'pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',eu:{nome:'',tel:''},ganhos:[],gastos:[],ats:[],cur:0}};
+let S={v:6,cars:[],cur:null,esp:'pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',eu:{nome:'',tel:''},ganhos:[],gastos:[],ats:[],cur:0},snooze:{}};
 function mig(x){if(!x||typeof x!='object')return null;if(x.car&&!x.cars){x.cars=[Object.assign({id:1,tipo:'carro'},x.car)];x.cur=1;(x.regs||[]).forEach(r=>{r.vid=1});delete x.car}
  if(!Array.isArray(x.cars)||!Array.isArray(x.regs))return null;x.v=2;x.regs.forEach(r=>{if(!r.vid&&x.cars[0])r.vid=x.cars[0].id});if(!x.cars.some(c=>c.id==x.cur))x.cur=x.cars.length?x.cars[0].id:null;
  x.chk=x.chk||{};x.chk.oficina=x.chk.oficina||[];
@@ -467,7 +467,7 @@ function carregar(raw){
  const p=isO(x.plano)?x.plano:{};
  out.plano.sal=Math.max(0,nm(p.sal));let gu=nm(p.gu,10),iv=nm(p.iv,10);if(gu<0||iv<0||gu+iv>100){gu=10;iv=10}out.plano.gu=gu;out.plano.iv=iv;
  arO(p.extras).forEach(e=>{e.id=nm(e.id,Date.now()+out.plano.extras.length);e.nome=String(e.nome==null?'':e.nome);e.v=nm(e.v);out.plano.extras.push(e)});
- const b=isO(x.bk)?x.bk:{};out.bk={ult:Math.max(0,nm(b.ult)),cnt:Math.max(0,nm(b.cnt)),adiar:Math.max(0,nm(b.adiar))};
+ const b=isO(x.bk)?x.bk:{};out.bk={ult:Math.max(0,nm(b.ult)),cnt:Math.max(0,nm(b.cnt)),adiar:Math.max(0,nm(b.adiar))};{const sn=isO(x.snooze)?x.snooze:{};out.snooze={};Object.keys(sn).slice(0,300).forEach(k=>{if(/^[\w:-]{1,60}$/.test(k)&&/^\d{4}-\d{2}-\d{2}$/.test(String(sn[k])))out.snooze[k]=String(sn[k])})}
  arO(x.obj).forEach(o=>{const mt=nm(o.meta),pz=String(o.prazo);if(!(mt>0)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(pz)||out.obj.length>=3){DROP++;return}
   out.obj.push({id:nm(o.id,Date.now()+out.obj.length),nome:String(o.nome==null?'':o.nome).slice(0,40),ic:OBI.includes(o.ic)?o.ic:'🎯',meta:mt,saldo:Math.max(0,nm(o.saldo)),prazo:pz,onde:OBO.includes(o.onde)?o.onde:'Outro',mk:Math.max(0,Math.min(100,nm(o.mk)))})});
  const tr=isO(x.trab)?x.trab:{},okD=d=>/^\d{4}-\d{2}-\d{2}/.test(d),tx=(v,n)=>String(v==null?'':v).slice(0,n);
@@ -533,7 +533,7 @@ function obG(id){const o=S.obj.find(x=>x.id==id),v=+($('obv'+id)||{}).value;if(!
 /* ===== Manutenção por km (Etapa 4) ===== */
 const MANP=[['Troca de óleo',10000],['Filtro de ar',15000],['Pastilhas de freio',20000],['Pneus',40000],['Correia dentada',50000],['Outro',10000]];
 const mFalta=(c,m)=>Math.round(m.ult+m.cada-c.km),kmF=v=>Math.abs(v).toLocaleString('pt-BR');
-function manAl(){const o=[];S.cars.forEach(c=>{if(!(c.km>0))return;(c.man||[]).forEach(m=>{const f=mFalta(c,m);if(f<=500)o.push(mkC(c)+'🔧 <b>'+esc(m.nome)+' — '+esc(vn(c))+':</b> '+(f<0?'vencida há '+kmF(f)+' km':f==0?'vence agora':'vence em '+kmF(f)+' km'))})});return o}
+function manAl(){const o=[];S.cars.forEach(c=>{if(!(c.km>0))return;(c.man||[]).forEach(m=>{const f=mFalta(c,m);if(f<=500)o.push(mkC(c)+mkK('mn:'+c.id+':'+String(m.nome).replace(/\W/g,'').slice(0,20),'s')+'🔧 <b>'+esc(m.nome)+' — '+esc(vn(c))+':</b> '+(f<0?'vencida há '+kmF(f)+' km':f==0?'vence agora':'vence em '+kmF(f)+' km'))})});return o}
 function manPre(){const p=MANP[+$('mnp').value]||MANP[0];$('mnn').value=p[0]=='Outro'?'':p[0];$('mni').value=p[1]}
 function man(){const e=$('manL');if(!e)return;if(!car().id){e.innerHTML='<div class="emp">Cadastre um veículo para criar lembretes.</div>';return}
  const c=car(),L=c.man||[];
@@ -759,19 +759,27 @@ function home(){
  $('lg').innerHTML=ks.map((k,i)=>'<div><span><i style="background:'+COL[i]+'"></i>'+k+'</span><b>'+(T?Math.round(c[k]/T*100):0)+'% ('+R(c[k])+')</b></div>').join('');
  const pos=ks.filter(k=>c[k]>0).sort((a,b)=>c[b]-c[a]);
  $('ins').innerHTML=!pos.length?'💡 Registre seu primeiro gasto para ver a análise aqui.':pos.length==1?'💡 Todo o gasto do período foi com <b>'+pos[0]+'</b>.':'💡 Seu maior gasto foi com <b>'+pos[0]+'</b> e o menor foi com <b>'+pos[pos.length-1]+'</b>.';
- const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')',p:c.uso,car:c.id})));
+ const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')',p:c.uso,car:c.id,k:'pd:'+c.id+':'+String(i.t).replace(/\W/g,'').slice(0,20)})));
  $('alL').innerHTML=alHtml(ag,pend);
- $('dot').style.display=(ag.length+pend.length+sgAl().length+ctAl().length+plAl().length+ecoAl().length+manAl().length+agAl().length+bkAl().length)?'block':'none';
+ $('dot').style.display=alVis?'block':'none';
 }
-function alHtml(ag,pend){const it=[],P=h=>{const m=h.match(/^<!--P:(\w+):(\d+)-->/);return m?{h:h.slice(m[0].length),p:m[1],car:+m[2]}:{h,p:'geral',car:0}},
+let alSh=false,alVis=0;
+function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'};let m;while(m=x.h.match(/^<!--(P|K):([^>]*?)-->/)){if(m[1]=='P'){const q=m[2].split(':');x.p=q[0];x.car=+q[1]}else{const q=m[2].split('|');x.k=q[0];x.m=q[1]}x.h=x.h.slice(m[0].length)}return x},
  add=(L,p,tab)=>L.forEach(h=>{const x=P(h);if(x.p=='geral')x.p=p;x.tab=tab;it.push(x)});
- ag.forEach(r=>{const cr=S.cars.find(c=>c.id==r.vid);it.push({h:'🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button>',p:cr?cr.uso:'pessoal',car:0,tab:''})});
+ ag.forEach(r=>{const cr=S.cars.find(c=>c.id==r.vid);it.push({h:'🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button>',p:cr?cr.uso:'pessoal',car:0,tab:'',k:'',m:'f'})});
  add(sgAl(),'pessoal','veic');add(ctAl(),'pessoal','casa');add(plAl(),'pessoal','plano');add(ecoAl(),'pessoal','casa');add(manAl(),'pessoal','veic');add(agAl(),'trabalho','prof');add(bkAl(),'geral','');
- pend.forEach(i=>it.push({h:'⏳ <b>Pendente na oficina:</b> '+esc(i.t),p:i.p,car:i.car,tab:'veic'}));
+ pend.forEach(i=>it.push({h:'⏳ <b>Pendente na oficina:</b> '+esc(i.t),p:i.p,car:i.car,tab:'veic',k:i.k,m:'s'}));
  it.forEach(x=>x.u=/venceu|vence hoje|atrasad|vencida|vence agora|encerrada|passaram/i.test(x.h)||x.h.includes('⚠️')?0:3);
- const rk=x=>x.u+(x.p==S.esp?0:x.p=='geral'?1:2),TG={trabalho:'💼 Trabalho',pessoal:'👤 Pessoal'},NM2={trabalho:'Trabalho',pessoal:'Pessoal'};
+ const rk=x=>x.u+(x.p==S.esp?0:x.p=='geral'?1:2),TG={trabalho:'💼 Trabalho',pessoal:'👤 Pessoal'},NM2={trabalho:'Trabalho',pessoal:'Pessoal'},sn=S.snooze||{},hd=x=>x.m!='f'&&x.k&&sn[x.k]&&sn[x.k]>hoje();
  it.sort((x,y)=>rk(x)-rk(y));
- return it.length?it.map(x=>'<div class="al">'+(TG[x.p]?'<span class="tg">'+TG[x.p]+'</span>':'')+x.h+(x.tab&&!x.h.includes('onclick')?'<br><button class="mini" style="margin:6px 0 0" onclick="alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+')">Abrir'+(x.p!=S.esp&&NM2[x.p]?' em '+NM2[x.p]:'')+' ›</button>':'')+'</div>').join(''):'<div class="emp">Nenhum alerta por enquanto.</div>'}
+ const vis=it.filter(x=>!hd(x)),hid=it.filter(hd);alVis=vis.length;
+ const row=x=>{const sz=x.m!='f'&&x.k,hh=hd(x),hb=x.h.includes('onclick'),B='<button class="mini" style="margin:6px 4px 0 0" onclick="',
+  b=(x.tab&&!hb?B+'alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+')">Abrir'+(x.p!=S.esp&&NM2[x.p]?' em '+NM2[x.p]:'')+' ›</button>':'')+(sz?(hh?B+'alBack(\''+x.k+'\')">↩ Mostrar de novo</button>':B+'alSoneca(\''+x.k+'\',\''+x.m+'\')">'+(x.m=='d'?'✖ Dispensar':'⏰ Lembrar amanhã')+'</button>'):'');
+  return '<div class="al">'+(hh?'<span class="tg">💤</span>':'')+(TG[x.p]?'<span class="tg">'+TG[x.p]+'</span>':'')+x.h+(b?(hb?'':'<br>')+b:'')+'</div>'};
+ return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
+function alVer(){alSh=!alSh;render()}
+function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
+function alBack(k){if(S.snooze)delete S.snooze[k];save();render()}
 function alIr(p,t,car){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car;save()}if(S.esp!=p){setEsp(p);toast('Perfil trocado para '+(p=='trabalho'?'Trabalho':'Pessoal'))}else if(car)render();go(t)}
 function ctPagar(id){ctPg(id);toast('Conta marcada como paga')}
 function pagar(id){const r=S.regs.find(x=>x.id==id);if(r){r.ag=false;save();render();toast('Registro marcado como pago')}}
@@ -798,10 +806,12 @@ function fixCur(){const f=u=>(S.cars.find(c=>c.id==(u=='trabalho'?S.trab.cur:S.c
 function setV(id){if(S.esp=='trabalho')S.trab.cur=id;else S.cur=id;save();closeM();render()}
 function pd(s,i){const[y,m,d]=s.split('-').map(Number),t=new Date(y,m-1+i,1),dm=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return new Date(t.getFullYear(),t.getMonth(),Math.min(d,dm),12)}
 function sgAl(){const o=[];S.cars.forEach(c=>['seg','fin'].forEach(k=>{if(c[k])ctrAl(c,k).forEach(t=>o.push(t))}));return o}
+const dDif=d=>{const n=new Date();return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/864e5)};
+const mkK=(k,m)=>'<!--K:'+k+'|'+m+'-->';
 const mkC=c=>'<!--P:'+c.uso+':'+c.id+'-->';
 function ctrAl(c,k){const s=c[k],o=[],n=new Date(),E=k=='seg'?'🛡️':'🏦',T=(k=='seg'?'Seguro':'Financiamento')+' — '+esc(vn(c));
- for(let i=0;i<s.n;i++){if(s.pg[i])continue;const df=Math.ceil((pd(s.sd,i)-n)/864e5);if(df<=7)o.push(mkC(c)+E+' <b>'+T+':</b> parcela '+(i+1)+'/'+s.n+' '+(df<0?'atrasada há '+(-df)+' dia(s)':df==0?'vence hoje':'vence em '+df+' dia(s)')+' ('+R(s.tot/s.n)+')')}
- if(s.fim){const df=Math.ceil((new Date(s.fim+'T12:00')-n)/864e5);if(df<=30)o.push(mkC(c)+E+' <b>'+T+':</b> '+(df<0?'vigência encerrada. Renove.':'termina em '+df+' dia(s). Hora de renovar.'))}return o}
+ for(let i=0;i<s.n;i++){if(s.pg[i])continue;const df=dDif(pd(s.sd,i));if(df<=3)o.push(mkC(c)+mkK('sg:'+c.id+k+i,df<=0?'f':'s')+E+' <b>'+T+':</b> parcela '+(i+1)+'/'+s.n+' '+(df<0?'atrasada há '+(-df)+' dia(s)':df==0?'vence hoje':'vence em '+df+' dia(s)')+' ('+R(s.tot/s.n)+')')}
+ if(s.fim){const df=dDif(new Date(s.fim+'T12:00'));if(df<=30)o.push(mkC(c)+mkK('sv:'+c.id+k,df<0?'f':'s')+E+' <b>'+T+':</b> '+(df<0?'vigência encerrada. Renove.':'termina em '+df+' dia(s). Hora de renovar.'))}return o}
 function seg(){const s=car().seg,e=$('sg');
  if(!s){e.innerHTML='<div class="ct">🛡️ Seguro</div><button class="btn s" style="margin:0" onclick="openSeg()">+ Adicionar seguro</button>';return}
  const pv=s.tot/s.n;
@@ -1008,7 +1018,7 @@ function ctPg(id){const b=S.contas.itens.find(x=>x.id==id),k=mesK();if(b.pg[k])d
 function ctDel(id){if(confirm('Remover esta conta fixa?')){S.contas.itens=S.contas.itens.filter(x=>x.id!=id);save();render()}}
 function ctAdd(){const n=$('cn').value.trim(),d=+$('cd').value;if(!n||d<1||d>31){toast('Informe o nome e o dia do vencimento (1 a 31)');return}
  S.contas.itens.push({id:Date.now(),nome:n,tipo:$('ctp').value,dia:Math.floor(d),valor:+$('cv').value||0,pg:{},vm:{}});$('cn').value='';$('cd').value='';$('cv').value='';save();render()}
-function ctAl(){const n=new Date(),o=[];S.contas.itens.forEach(b=>{if(b.pg[mesK()])return;const df=Math.ceil((dueD(b.dia)-n)/864e5);if(df<=5)o.push((CI[b.tipo]||'📌')+' <b>'+esc(b.nome)+':</b> '+(df<0?'venceu há '+(-df)+' dia(s)':df==0?'vence hoje':'vence em '+df+' dia(s)')+' ('+R(ctVal(b))+')<br><button class="mini" style="margin:6px 0 0" onclick="ctPagar('+b.id+')">✔ Marcar como pago</button>')});return o}
+function ctAl(){const n=new Date(),o=[];S.contas.itens.forEach(b=>{if(b.pg[mesK()])return;const df=dDif(dueD(b.dia));if(df<=3)o.push(mkK('ct:'+b.id+':'+mesK(),df<=0?'f':'s')+(CI[b.tipo]||'📌')+' <b>'+esc(b.nome)+':</b> '+(df<0?'venceu há '+(-df)+' dia(s)':df==0?'vence hoje':'vence em '+df+' dia(s)')+' ('+R(ctVal(b))+')<br><button class="mini" style="margin:6px 0 0" onclick="ctPagar('+b.id+')">✔ Marcar como pago</button>')});return o}
 function inM(dt,off){const d=new Date(dt),n=new Date(),t=new Date(n.getFullYear(),n.getMonth()-off,1);return !isNaN(d)&&d.getMonth()==t.getMonth()&&d.getFullYear()==t.getFullYear()}
 function mK(off){const t=new Date(new Date().getFullYear(),new Date().getMonth()-off,1);return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')}
 function vg(off){const W=new Set(S.cars.filter(c=>c.uso=='trabalho').map(c=>c.id)),k=mK(off);let pv=0,tv=0,ca=0,cc=0,tg=0,gt=0;
@@ -1036,8 +1046,8 @@ function plSal(){S.plano.sal=+$('ps').value||0;save();plCalc();home()}
 function plAdd(){const n=$('pen').value.trim(),v=+$('pev').value||0;if(!n||v<=0){toast('Informe a descrição e o valor');return}S.plano.extras.push({id:Date.now(),nome:n,v,fr:$('pef').value,mk:mesK()});$('pen').value='';$('pev').value='';save();plano();home()}
 function plDel(id){S.plano.extras=S.plano.extras.filter(e=>e.id!=id);save();plano();home()}
 function plAl(){const r=plRenda(),o=[];if(r<=0)return o;const p=S.plano,lim=r*(100-p.gu-p.iv)/100,c=gMes(0),b=gMes(1),u=c.t+plPend();
- if(u>lim)o.push('⚠️ <b>Plano:</b> seus gastos do mês passaram do limite em '+R(u-lim));else if(u>lim*.9)o.push('⚠️ <b>Plano:</b> você já usou mais de 90% do limite de gastos do mês');
- if(b.t>0&&c.t>b.t)o.push('📈 <b>Atenção:</b> você já gastou mais do que no mês passado inteiro ('+R(b.t)+')');return o}
+ if(u>lim)o.push(mkK('pl:a:'+mesK(),'s')+'⚠️ <b>Plano:</b> seus gastos do mês passaram do limite em '+R(u-lim));else if(u>lim*.9)o.push(mkK('pl:b:'+mesK(),'s')+'⚠️ <b>Plano:</b> você já usou mais de 90% do limite de gastos do mês');
+ if(b.t>0&&c.t>b.t)o.push(mkK('pl:c:'+mesK(),'s')+'📈 <b>Atenção:</b> você já gastou mais do que no mês passado inteiro ('+R(b.t)+')');return o}
 function plano(){const p=S.plano;$('ps').value=p.sal||'';$('pgu').value=p.gu;$('pin').value=p.iv;
  $('peL').innerHTML=p.extras.map(e=>'<div class="it"><div class="b"><div class="t"><span>'+esc(e.nome)+'</span><span>'+R(e.v)+'</span></div><small>'+({semanal:'Toda semana',mensal:'Todo mês',unico:'Só em '+e.mk})[e.fr]+'</small></div><button class="mini" onclick="plDel('+e.id+')">🗑️</button></div>').join('');plCalc()}
 function ov(){const x=vg(0),r=plRenda(),pend=plPend(),pes=x.pv,casa=x.ca+x.cc,trab=x.tv+x.tg,gasto=pes+casa+trab,ganho=r+x.gt,sobra=ganho-gasto-pend,luc=x.gt-trab,
@@ -1063,7 +1073,7 @@ function consumo(){const f=paid().filter(r=>r.t=='c'&&r.lt>0&&r.p>0).sort((a,b)=
  const L=f[f.length-1],P=f[f.length-2],pl=r=>r.p/r.lt,m=(a,b)=>a.k&&b.k&&b.k>a.k?(b.k-a.k)/b.lt:0,ml=m(P,L),mp=f.length>2?m(f[f.length-3],P):0,d=pl(L)-pl(P),fx=v=>v.toFixed(1).replace('.',',');
  e.innerHTML='<div class="ct">⛽ Consumo e preço</div><div class="cl"><span>Preço por litro (último)</span><b>'+R(pl(L))+' <small>('+(d>=0?'▲ ':'▼ ')+R(Math.abs(d))+')</small></b></div>'+(ml?'<div class="cl"><span>Média do último tanque</span><b>'+fx(ml)+' km/l'+(mp?' <small>('+(ml>=mp?'▲ ':'▼ ')+fx(Math.abs(ml-mp))+')</small>':'')+'</b></div>':'')}
 function ecoAl(){const o=[],cur={},pv={};S.casa.gastos.forEach(g=>{if(inM(g.dt,0))cur[g.cat]=(cur[g.cat]||0)+g.p;if(inM(g.dt,1))pv[g.cat]=(pv[g.cat]||0)+g.p});
- Object.keys(cur).forEach(k=>{const d=cur[k]-(pv[k]||0);if(pv[k]>0&&d>=30&&cur[k]>pv[k]*1.3)o.push('💡 <b>Economia:</b> “'+esc(k)+'” já subiu '+R(d)+' em relação ao mês passado. Dá para economizar aqui.')});return o}
+ Object.keys(cur).forEach(k=>{const d=cur[k]-(pv[k]||0);if(pv[k]>0&&d>=30&&cur[k]>pv[k]*1.3)o.push(mkK('ec:'+String(k).replace(/\W/g,'').slice(0,20)+':'+mesK(),'d')+'💡 <b>Economia:</b> “'+esc(k)+'” já subiu '+R(d)+' em relação ao mês passado. Dá para economizar aqui.')});return o}
 function csvRows(){const a=[],nm=id=>{const c=S.cars.find(x=>x.id==id);return c?vn(c):'Veículo'};
  S.regs.forEach(r=>{if(!r.ag)a.push([r.dt.slice(0,10),'Veículo'+((S.cars.find(c=>c.id==r.vid)||{}).uso=='trabalho'?' de trabalho':'')+' — '+nm(r.vid),r.d||NM[r.t],r.l||'',tot(r)])});
  S.casa.gastos.forEach(g=>a.push([g.dt.slice(0,10),'Casa',g.d,g.cat,+g.p||0]));
