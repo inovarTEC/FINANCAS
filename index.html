@@ -380,12 +380,15 @@ html.lock,html.lock body{overflow:hidden}
  <div class="row"><input id="ajNm" maxlength="60" placeholder="Seu nome" onchange="setEu()"><input id="ajTl" type="tel" maxlength="20" placeholder="Seu telefone" onchange="setEu()"></div>
  <label>Visual</label>
  <div class="seg" id="ajth" style="margin-bottom:0"><button data-th="executivo" onclick="setTema('executivo')">Executivo</button><button data-th="noturno" onclick="setTema('noturno')">Noturno</button><button data-th="facil" onclick="setTema('facil')">Fácil de ler</button></div>
+ <label>App de mapas (iPhone)</label>
+ <div class="seg" id="ajmp" style="margin-bottom:0"><button data-mp="apple" onclick="setMapa('apple')">Apple Maps</button><button data-mp="google" onclick="setMapa('google')">Google Maps</button><button data-mp="waze" onclick="setMapa('waze')">Waze</button></div>
  <div class="ct" style="margin:16px 0 0">Seus dados</div>
 <div class="card" id="nv" style="display:none;margin:8px 0 0;box-shadow:none"><div class="ct">☁️ Backup na nuvem</div><small style="color:var(--mu)">Guarda uma cópia privada dos seus dados na sua conta. Salvar e restaurar são manuais.</small><div class="row" style="margin-top:10px"><button class="btn s" onclick="nuvem('s')">⬆️ Salvar</button><button class="btn s" onclick="nuvem('r')">⬇️ Restaurar</button></div><div class="ins" id="nvs" style="margin-top:10px"></div></div>
  <button class="btn s" onclick="closeM();openRel()">📄 Relatório de despesas (PDF)</button>
  <button class="btn s" onclick="closeM();openCsv()">📤 Exportar todos os lançamentos (CSV)</button>
  <button class="btn s" onclick="closeM();openBk()">💾 Backup dos dados</button>
  <button class="btn s" style="color:#DC2626;border-color:#DC2626" onclick="closeM();limpar()">🧹 Apagar todos os dados</button>
+ <div class="lg" style="text-align:center;margin-top:12px">AutoGestor Pro <span id="ajV"></span></div>
 </div></div>
 
 <div class="mo" id="mWel"><div class="mb">
@@ -416,7 +419,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const R=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const KEY='agp1',TH=['executivo','noturno','facil'],NM={c:'Abastecimento',o:'Oficina',i:'IPVA / taxas',s:'Seguro',f:'Financiamento'},IC={c:'⛽',o:'🔧',i:'📄',s:'🛡️',f:'🏦'};
 const COL=['#10B981','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#14B8A6'],TI={carro:'🚘 ',moto:'🏍️ ',bike:'🚲 ',ebike:'⚡🚲 '};
-let S={v:6,cars:[],cur:null,esp:'pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',eu:{nome:'',tel:''},ganhos:[],gastos:[],ats:[],cur:0},snooze:{}};
+let S={v:6,cars:[],cur:null,esp:'pessoal',tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',eu:{nome:'',tel:''},ganhos:[],gastos:[],ats:[],cur:0},snooze:{},mapa:'apple'};
 function mig(x){if(!x||typeof x!='object')return null;if(x.car&&!x.cars){x.cars=[Object.assign({id:1,tipo:'carro'},x.car)];x.cur=1;(x.regs||[]).forEach(r=>{r.vid=1});delete x.car}
  if(!Array.isArray(x.cars)||!Array.isArray(x.regs))return null;x.v=2;x.regs.forEach(r=>{if(!r.vid&&x.cars[0])r.vid=x.cars[0].id});if(!x.cars.some(c=>c.id==x.cur))x.cur=x.cars.length?x.cars[0].id:null;
  x.chk=x.chk||{};x.chk.oficina=x.chk.oficina||[];
@@ -427,7 +430,7 @@ const OBI=['🚗','✈️','🏠','🛡️','🎯'],OBN={'🚗':'Veículo','✈�
 const TCAT=['Alimentação','Ferramenta','Material','Pedágio e estacionamento','Outros'];
 const ndt=d=>d.slice(0,10)+'T'+(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(d)?d.slice(11,16):'12:00');
 const PROF_OLD=['Eletricista','Encanador','Motorista de app','Frete e entregas','Técnico de visitas'];
-const TOPK=['v','cars','cur','esp','perf','tema','regs','casa','contas','plano','bk','perfOk','obj','trab','car','chk'];
+const TOPK=['v','cars','cur','esp','perf','tema','regs','casa','contas','plano','bk','perfOk','obj','trab','car','chk','snooze','mapa'];
 const isO=o=>!!o&&typeof o=='object'&&!Array.isArray(o);
 const nm=(v,d)=>{v=+v;return isFinite(v)?v:(d||0)};
 const arO=(a,f)=>Array.isArray(a)?a.filter(isO):[];
@@ -442,7 +445,7 @@ function carregar(raw){
  if(w.regs){const n=w.regs.length;w.regs=arO(w.regs);DROP+=n-w.regs.length}
  if(w.obj===undefined)w.obj=[];if(w.trab===undefined)w.trab={};if(w.esp===undefined)w.esp='pessoal';
  const x=mig(w);if(!x)return null;
- const out={v:6,cars:[],cur:x.cur,esp:x.esp=='trabalho'?'trabalho':'pessoal',tema:TH.includes(x.tema)?x.tema:null,regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',eu:{nome:'',tel:''},ganhos:[],gastos:[],ats:[],cur:0}};
+ const out={v:6,cars:[],cur:x.cur,esp:x.esp=='trabalho'?'trabalho':'pessoal',tema:TH.includes(x.tema)?x.tema:null,mapa:['apple','google','waze'].includes(x.mapa)?x.mapa:'apple',regs:[],casa:{listas:[],gastos:[],compras:[]},contas:{itens:[]},plano:{sal:0,gu:10,iv:10,extras:[]},bk:{ult:0,cnt:0,adiar:0},perfOk:false,obj:[],trab:{ativ:'',eu:{nome:'',tel:''},ganhos:[],gastos:[],ats:[],cur:0}};
  out.perfOk=false;
  const dt=/^\d{4}-\d{2}-\d{2}$/;
  x.cars.forEach(c=>{
@@ -648,8 +651,11 @@ function anTpR(){$('anTp').innerHTML=Object.keys(TPN).map(k=>'<button class="'+(
 function anTpSet(k){anTpV=k;anTpR()}
 function atTpS(v){const a=atAch(atId);if(!a||!TPN[v])return;a.tp=v;atRef()}
 const clC=n=>{const L=S.trab.ats.filter(a=>ATK(a.cli)==ATK(n)).sort((x,y)=>x.dt<y.dt?1:-1),t=L.find(a=>a.tel);return{L,u:L[0],tel:t?t.tel:'',tid:t?t.id:0,loc:(L.find(a=>a.loc)||{}).loc||'',geo:(L.find(a=>a.geo)||{}).geo||''}};
-function mapaUrl(g,l){g=(g||'').trim();if(/^https?:\/\//i.test(g))return g;const m=g.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)$/);if(m)return iosApp()?'maps://?q='+m[1]+','+m[2]:'https://www.google.com/maps?q='+m[1]+','+m[2];return l?(iosApp()?'maps://?q=':'https://www.google.com/maps/search/?api=1&query=')+encodeURIComponent(l):''}
-function mapaAbrir(g,l){const u=mapaUrl(g,l);if(!u){toast('Sem localização nem endereço cadastrado');return}abrirExt(u)}
+function mapaUrl(g,l){g=(g||'').trim();if(/^https?:\/\//i.test(g))return g;const m=g.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)$/),q=m?m[1]+','+m[2]:(l||'');if(!q)return '';
+ if(isIOS()){const a=S.mapa||'apple',e=m?q:encodeURIComponent(q);return a=='waze'?(m?'waze://?ll='+q+'&navigate=yes':'waze://?q='+e+'&navigate=yes'):(a=='google'?'comgooglemaps://?q=':'maps://?q=')+e}
+ return m?'https://www.google.com/maps?q='+q:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
+function mapaAbrir(g,l){const u=mapaUrl(g,l);if(!u){toast('Sem localização nem endereço cadastrado');return}abrirExt(u);
+ if(!/^https?:/i.test(u)){let v=0;document.addEventListener('visibilitychange',()=>{v=1},{once:true});setTimeout(()=>{if(!v&&document.visibilityState=='visible')toast('Não abriu? Troque o app de mapas em Ajustes.')},2200)}}
 function atGeo(){if(!navigator.geolocation){toast('Localização indisponível neste aparelho');return}toast('Buscando localização…');navigator.geolocation.getCurrentPosition(p=>{if(!atAch(atId)||!$('atG'))return;$('atG').value=p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6);atSet();toast('Localização salva')},()=>toast('Não foi possível obter a localização'),{enableHighAccuracy:true,timeout:15000})}
 function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT').value=c.tel;if(!$('anL').value)$('anL').value=c.loc}}
 function atNovoSave(){const cli=$('anC').value.trim().slice(0,60),d=$('anD').value,h=$('anS').value;if(!cli){toast('Informe o nome do cliente');return}
@@ -736,7 +742,9 @@ function setAtiv(v){S.trab.ativ=v.trim().slice(0,40);save()}
 function setEu(){S.trab.eu={nome:$('ajNm').value.trim().slice(0,60),tel:$('ajTl').value.trim().slice(0,20)};save()}
 function ajTema(){document.querySelectorAll('#ajth button').forEach(b=>b.classList.toggle('on',b.dataset.th==S.tema))}
 function setTema(t){applyTheme(t);ajTema()}
-function openAj(){$('ajAt').value=S.trab.ativ;$('ajNm').value=S.trab.eu.nome;$('ajTl').value=S.trab.eu.tel;ajTema();$('mAj').classList.add('on')}
+function ajMapa(){document.querySelectorAll('#ajmp button').forEach(b=>b.classList.toggle('on',b.dataset.mp==(S.mapa||'apple')))}
+function setMapa(m){S.mapa=m;save();ajMapa()}
+function openAj(){$('ajAt').value=S.trab.ativ;$('ajNm').value=S.trab.eu.nome;$('ajTl').value=S.trab.eu.tel;ajTema();ajMapa();$('ajV').textContent=APP_V;$('mAj').classList.add('on')}
 function go(t){if(!TABS[S.esp].includes(t))t='inicio';document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.id=='t-'+t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));scrollTo(0,0);if(t=='prof')calc()}
 function inPer(r,p){const d=new Date(r.dt),n=new Date();if(isNaN(d))return false;if(p=='sem')return n-d<=7*864e5&&d<=n;if(p=='mes')return d.getMonth()==n.getMonth()&&d.getFullYear()==n.getFullYear();return d.getFullYear()==n.getFullYear()}
 const carsE=()=>S.cars.filter(c=>c.uso==S.esp),curE=()=>S.esp=='trabalho'?S.trab.cur:S.cur,car=()=>carsE().find(c=>c.id==curE())||carsE()[0]||NOCAR,NOCAR={id:0,tipo:'carro',nome:'',km:0,ki:0,chk:[]},vn=c=>c.nome||c.mo||c.m||'Veículo',ic=c=>c.el?TI.ebike:TI[c.tipo];
@@ -780,8 +788,8 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const iosApp=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches);
-function zapUrl(n,t){return iosApp()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
+const APP_V='v24',isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
  localStorage.setItem(KEY+'_nav',JSON.stringify({t:Date.now(),tab:t?t.id.slice(2):'inicio',mo:m?m.id:'',atId,clN,agV,agRf,agDia,agBack,agF,tv:q('#tvs','v'),vs:q('#vsub','p'),cx:q('#cxs','v')}));
