@@ -66,6 +66,12 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .mini{border:1px solid var(--bd);background:var(--ph);color:var(--tx);border-radius:8px;padding:3px 7px;font-size:13px;cursor:pointer;margin-left:4px}
 .chips{display:flex;gap:6px;overflow-x:auto;margin:10px 0}.chips button{flex-shrink:0;border:1px solid var(--bd);background:var(--ph);color:var(--mu);border-radius:20px;padding:6px 12px;font-weight:700;font-size:calc(12px*var(--fs));cursor:pointer}
 .chips button.on{background:var(--pr);color:var(--pt)}
+.lk{cursor:pointer;text-decoration:underline dotted}
+.cd{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:2px solid transparent}.cd b{min-width:60px}.cd span{flex:1;min-width:0;color:var(--mu);font-size:calc(12.5px*var(--fs));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cd em{font-style:normal;font-weight:800}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}.cg i{font-style:normal;text-align:center;color:var(--mu);font-size:calc(11px*var(--fs));font-weight:700}
+.mc{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;font-weight:700}.mc small{font-size:calc(10px*var(--fs));min-height:1em}
+.cz{background:rgba(128,128,128,.15)}.cv{background:rgba(22,163,74,.22)}.ca{background:rgba(245,158,11,.32)}.cr{background:rgba(220,38,38,.3)}.hj{box-shadow:inset 0 0 0 2px var(--pr)}.sel{border-color:var(--pr)}
+.lg{font-size:calc(11.5px*var(--fs));color:var(--mu);margin:6px 0}
 .chk{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd);cursor:pointer}
 .chk b{width:24px;height:24px;border-radius:7px;border:2px solid var(--pr);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
 .chk.d b{background:#10B981;border-color:#10B981}.chk.d span{text-decoration:line-through;color:var(--mu)}
@@ -187,7 +193,7 @@ html.lock,html.lock body{overflow:hidden}
 <section class="tab" id="t-prof">
  <div class="seg" id="tvs"><button class="on" data-v="ag" onclick="trv('ag')">📅 Agenda</button><button data-v="res" onclick="trv('res')">📊 Resultado</button><button data-v="fer" onclick="trv('fer')">🛠️ Ferramentas</button></div>
  <div id="tr-ag">
-  <div class="card"><div class="ct">📅 Agenda de atendimentos</div><div class="chips" id="agC"></div><div id="agL"></div>
+  <div class="card"><div class="ct">📅 Agenda de atendimentos</div><div class="seg" id="agVw"></div><div id="agCal"></div><div class="chips" id="agC"></div><div id="agL"></div>
    <button class="btn" onclick="atNovo()">＋ Novo atendimento</button></div>
  </div>
  <div id="tr-res" style="display:none">
@@ -317,9 +323,10 @@ html.lock,html.lock body{overflow:hidden}
 
 <div class="mo" id="mAn"><div class="mb">
  <div class="mh"><span id="anH">Novo atendimento</span><button class="ib" onclick="closeM()">✖</button></div>
- <label>Cliente</label><input id="anC" list="dlCli" maxlength="60" placeholder="Nome do cliente" onchange="anFill()"><datalist id="dlCli"></datalist>
+ <div class="seg" id="anTp"></div><label>Cliente</label><input id="anC" list="dlCli" maxlength="60" placeholder="Nome do cliente" onchange="anFill()"><datalist id="dlCli"></datalist>
  <div class="row"><div><label>Telefone (opcional)</label><input id="anT" type="tel" maxlength="20" placeholder="(81) 99999-9999"></div><div><label>Local (opcional)</label><input id="anL" maxlength="80" placeholder="Endereço ou bairro"></div></div>
- <div class="row"><div><label>Data</label><input id="anD" type="date"></div><div><label>Hora</label><input id="anS" type="time"></div></div>
+ <div class="row"><div><label>Data</label><input id="anD" type="date" onchange="anTpR()"></div><div><label>Hora</label><input id="anS" type="time" onchange="anTpR()"></div></div>
+ <div class="ins" id="anHint" style="display:none;margin-top:8px"></div>
  <button class="btn" onclick="atNovoSave()">Agendar</button>
 </div></div>
 
@@ -464,10 +471,10 @@ function carregar(raw){
   out.obj.push({id:nm(o.id,Date.now()+out.obj.length),nome:String(o.nome==null?'':o.nome).slice(0,40),ic:OBI.includes(o.ic)?o.ic:'🎯',meta:mt,saldo:Math.max(0,nm(o.saldo)),prazo:pz,onde:OBO.includes(o.onde)?o.onde:'Outro',mk:Math.max(0,Math.min(100,nm(o.mk)))})});
  const tr=isO(x.trab)?x.trab:{},okD=d=>/^\d{4}-\d{2}-\d{2}/.test(d),tx=(v,n)=>String(v==null?'':v).slice(0,n);
  const dtm=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,tm=v=>{v=tx(v,16);return dtm.test(v)?v:''},mny=v=>Math.min(1e7,Math.max(0,nm(v)));
- out.trab.ativ=tx(tr.ativ,200).trim().slice(0,40);{const eu=isO(tr.eu)?tr.eu:{};out.trab.eu={nome:tx(eu.nome,200).trim().slice(0,60),tel:tx(eu.tel,60).trim().slice(0,20)}}if(!out.trab.ativ&&PROF_OLD.includes(x.perf))out.trab.ativ=x.perf;out.trab.cur=(cu('trabalho',nm(tr.cur))||{}).id||0;
+ out.trab.ativ=tx(tr.ativ,200).trim().slice(0,40);{const eu=isO(tr.eu)?tr.eu:{};out.trab.eu={nome:tx(eu.nome,200).trim().slice(0,60),tel:tx(eu.tel,60).trim().slice(0,20)}}if(!out.trab.ativ&&PROF_OLD.includes(x.perf))out.trab.ativ=x.perf;out.trab.cur=(cu('trabalho',nm(tr.cur))||{}).id||0;out.trab.cap=Math.min(20,Math.max(1,Math.round(nm(tr.cap))||4));
  arO(tr.ats).forEach(a=>{const d=tx(a.dt,16),cli=tx(a.cli,60).trim();if(!dtm.test(d)||!cli||out.trab.ats.length>=3000){DROP++;return}
   const st=['agendado','atendido','nao'].includes(a.st)?a.st:'agendado',pago=st=='atendido'&&!!a.pago;let ent=tm(a.ent),sai=tm(a.sai);if(ent&&sai&&sai<ent)sai='';
-  out.trab.ats.push({id:nm(a.id,Date.now()+out.trab.ats.length),cli,tel:tx(a.tel,20),loc:tx(a.loc,80),dt:d,st,ent,sai,srv:arO(a.srv).slice(0,50).map(x=>({d:tx(x.d,80),v:mny(x.v)})),mat:arO(a.mat).slice(0,50).map(x=>({d:tx(x.d,80),v:mny(x.v),cob:x.cob!==false})),pago,pgdt:pago?(okD(tx(a.pgdt,10))?tx(a.pgdt,10):d.slice(0,10)):''})});
+  out.trab.ats.push({id:nm(a.id,Date.now()+out.trab.ats.length),cli,tel:tx(a.tel,20),loc:tx(a.loc,80),dt:d,st,ent,sai,srv:arO(a.srv).slice(0,50).map(x=>({d:tx(x.d,80),v:mny(x.v)})),mat:arO(a.mat).slice(0,50).map(x=>({d:tx(x.d,80),v:mny(x.v),cob:x.cob!==false})),tp:['orcamento','ocorrencia'].includes(a.tp)?a.tp:'servico',geo:tx(a.geo,120).trim(),pago,pgdt:pago?(okD(tx(a.pgdt,10))?tx(a.pgdt,10):d.slice(0,10)):''})});
  arO(tr.ganhos).forEach(g=>{const v=nm(g.v),d=tx(g.dt,40);if(!(v>0)||!okD(d)||out.trab.ganhos.length>=5000){DROP++;return}out.trab.ganhos.push({id:nm(g.id,Date.now()+out.trab.ganhos.length),dt:ndt(d),v,cli:tx(g.cli,60),d:tx(g.d,80)})});
  arO(tr.gastos).forEach(g=>{const p=nm(g.p),d=tx(g.dt,40),n=Math.floor(nm(g.n,1));if(!(p>0)||!okD(d)||out.trab.gastos.length>=5000){DROP++;return}out.trab.gastos.push({id:nm(g.id,Date.now()+out.trab.gastos.length),dt:ndt(d),cat:TCAT.includes(g.cat)?g.cat:'Outros',d:tx(g.d,80),p,n:n>=1&&n<=60?n:1})});
  out.perfOk=!!x.perfOk||out.cars.length>0||out.regs.length>0||out.esp!='pessoal';
@@ -557,7 +564,7 @@ function trRows(){const a=[],W=S.cars.filter(c=>c.uso=='trabalho').map(c=>c.id);
  S.trab.ganhos.forEach(g=>a.push({k:'g',id:g.id,dt:g.dt.slice(0,10),ym:g.dt.slice(0,7),v:g.v,t:g.cli||g.d||'Ganho',x:g.cli&&g.d?g.d:''}));
  S.trab.gastos.forEach(g=>gParc(g).forEach(p=>a.push({k:'d',id:g.id,dt:p.k==1?g.dt.slice(0,10):p.ym+'-01',ym:p.ym,v:p.v,t:g.d||g.cat,cat:g.cat,pc:g.n>1?p.k+'/'+g.n:'',tot:g.n>1?g.p:0})));
  S.regs.forEach(r=>{const d=String(r.dt);if(r.ag||!W.includes(r.vid)||!/^\d{4}-\d{2}/.test(d))return;a.push({k:'v',id:r.id,dt:d.slice(0,10),ym:d.slice(0,7),v:(+r.p||0)+(+r.m||0),t:(r.d||NM[r.t])+' — '+vn(S.cars.find(c=>c.id==r.vid)),cat:'Veículo de trabalho'})});
- S.trab.ats.forEach(t=>{if(t.st!='atendido')return;const d=t.dt.slice(0,10);
+ S.trab.ats.forEach(t=>{if(t.st!='atendido'||tpOf(t)=='orcamento')return;const d=t.dt.slice(0,10);
   t.mat.forEach(m=>{if(m.v>0)a.push({k:'d',src:'a',id:t.id,dt:d,ym:d.slice(0,7),v:m.v,t:(m.d||'Material')+' — '+t.cli,cat:'Material',pc:'',tot:0})});
   if(t.pago&&t.pgdt&&ATT(t)>0)a.push({k:'g',src:'a',id:t.id,dt:t.pgdt,ym:t.pgdt.slice(0,7),v:ATT(t),t:t.cli,x:t.srv.map(x=>x.d).filter(Boolean).join(', ').slice(0,60)})});
  return a.sort((x,y)=>x.dt<y.dt?1:x.dt>y.dt?-1:0)}
@@ -586,30 +593,65 @@ function trDel(k,id){const g=k=='d'?S.trab.gastos.find(x=>x.id==id):null;if(!con
  if(k=='g')S.trab.ganhos=S.trab.ganhos.filter(x=>x.id!=id);else S.trab.gastos=S.trab.gastos.filter(x=>x.id!=id);save();render()}
 /* ===== Agenda de atendimentos (Fase 1) ===== */
 let agF='hoje',atId=null,atFrom=null,atCp=[],clN='';
+const TPN={servico:'Serviço',orcamento:'Orçamento',ocorrencia:'Ocorrência'},TPI={servico:'🔧',orcamento:'📝',ocorrencia:'🚨'},tpOf=a=>TPN[a.tp]?a.tp:'servico';
+const dentroExp=(d,h)=>{const w=new Date(d+'T12:00').getDay();return w!=0&&h>='08:00'&&h<(w==6?'12:00':'18:00')};
 const ATT=a=>a.srv.reduce((x,y)=>x+y.v,0)+a.mat.filter(m=>m.cob).reduce((x,y)=>x+y.v,0),ATK=n=>String(n).trim().toLowerCase(),ATD=a=>a.dt.slice(0,10),hoje=()=>nowL().slice(0,10);
 const ATL={agendado:'📅 Agendado',andamento:'⏱️ Em andamento',atrasado:'⚠️ Atrasado',receber:'💰 A receber',pago:'✅ Pago',nao:'🚫 Não atendido'},ATI={agendado:'📅',andamento:'⏱️',atrasado:'⚠️',receber:'💰',pago:'✅',nao:'🚫'};
 function atS(a){if(a.st=='atendido')return a.pago?'pago':'receber';if(a.st=='nao')return 'nao';if(a.ent)return 'andamento';return ATD(a)<hoje()?'atrasado':'agendado'}
 function atTempo(a){if(!a.ent||!a.sai)return '';const m=Math.round((new Date(a.sai)-new Date(a.ent))/6e4);return m>=0?(m>=60?Math.floor(m/60)+'h ':'')+(m%60)+'min':''}
-const AGF=[['hoje','Hoje',a=>ATD(a)==hoje()],['prox','Próximos',a=>a.st=='agendado'&&ATD(a)>hoje()],['atend','Atendidos',a=>a.st=='atendido'],['nao','Não atendidos',a=>['nao','atrasado'].includes(atS(a))],['rec','A receber',a=>a.st=='atendido'&&!a.pago]];
-const atAch=id=>S.trab.ats.find(x=>x.id==id),atRec=()=>{const L=S.trab.ats.filter(a=>a.st=='atendido'&&!a.pago);return{v:L.reduce((x,a)=>x+ATT(a),0),n:L.length}};
-function agAl(){const h=hoje(),o=[];S.trab.ats.forEach(a=>{if(a.st!='agendado'||a.ent)return;const d=ATD(a);if(d==h)o.push('📅 <b>Hoje '+a.dt.slice(11)+' — '+esc(a.cli)+'</b>'+(a.loc?' • '+esc(a.loc):''));else if(d<h)o.push('⚠️ <b>Atendimento atrasado:</b> '+esc(a.cli)+' ('+dBR(a.dt)+')')});const rc=atRec();if(rc.n)o.push('💰 <b>A receber de clientes: '+R(rc.v)+'</b> ('+rc.n+' atendimento'+(rc.n>1?'s':'')+')');return o}
+const AGF=[['hoje','Hoje',a=>ATD(a)==hoje()],['prox','Próximos',a=>a.st=='agendado'&&ATD(a)>hoje()],['atend','Atendidos',a=>a.st=='atendido'],['nao','Não atendidos',a=>['nao','atrasado'].includes(atS(a))],['rec','A receber',a=>a.st=='atendido'&&!a.pago&&tpOf(a)!='orcamento']];
+const atAch=id=>S.trab.ats.find(x=>x.id==id),atRec=()=>{const L=S.trab.ats.filter(a=>a.st=='atendido'&&!a.pago&&tpOf(a)!='orcamento');return{v:L.reduce((x,a)=>x+ATT(a),0),n:L.length}};
+const lk=(id,t)=>'<span class="lk" onclick="atOpen('+id+')">'+t+'</span>';
+function agAl(){const h=hoje(),o=[];S.trab.ats.forEach(a=>{if(a.st!='agendado'||a.ent)return;const d=ATD(a);if(d==h)o.push(lk(a.id,'📅 <b>Hoje '+a.dt.slice(11)+' — '+esc(a.cli)+'</b>'+(a.loc?' • '+esc(a.loc):'')));else if(d<h)o.push(lk(a.id,'⚠️ <b>Atendimento atrasado:</b> '+esc(a.cli)+' ('+dBR(a.dt)+')'))});const rc=atRec();if(rc.n)o.push('💰 <b>A receber de clientes: '+R(rc.v)+'</b> ('+rc.n+' atendimento'+(rc.n>1?'s':'')+')');return o}
 function atCard(a){const s=atS(a),b=(t,fn)=>'<button class="mini" onclick="event.stopPropagation();'+fn+'">'+t+'</button>',tot=ATT(a),
  ac={agendado:b('📍 Cheguei','atChega('+a.id+')'),atrasado:b('📍 Cheguei','atChega('+a.id+')')+b('🔁 Reagendar','atRe('+a.id+')'),andamento:b('✔ Saí / Concluir','atSai('+a.id+')'),receber:b('💰 Marcar pago','atPaga('+a.id+')'),pago:'',nao:b('🔁 Reagendar','atRe('+a.id+')')}[s]+(a.tel&&['agendado','atrasado','andamento','nao'].includes(s)?b('💬','atZap('+a.id+')'):'');
- return '<div class="it" onclick="atOpen('+a.id+')" style="cursor:pointer"><div style="font-size:22px">'+ATI[s]+'</div><div class="b"><div class="t"><span>'+(['agendado','atrasado','andamento'].includes(s)?a.dt.slice(11)+' — ':'')+esc(a.cli)+'</span><span>'+(tot?R(tot):'')+'</span></div><small>'+ATL[s]+' • '+dBR(a.dt)+(a.loc?' • '+esc(a.loc):'')+(atTempo(a)?' • '+atTempo(a):'')+(a.pago?' • pago em '+dBR(a.pgdt):'')+'</small>'+(ac?'<div style="margin-top:6px">'+ac+'</div>':'')+'</div></div>'}
-function agR(){const e=$('agL');if(!e)return;const A=S.trab.ats;
+ return '<div class="it" onclick="atOpen('+a.id+')" style="cursor:pointer"><div style="font-size:22px">'+ATI[s]+'</div><div class="b"><div class="t"><span>'+(['agendado','atrasado','andamento'].includes(s)?a.dt.slice(11)+' — ':'')+(tpOf(a)!='servico'?TPI[tpOf(a)]+' ':'')+esc(a.cli)+'</span><span>'+(tot?R(tot):'')+'</span></div><small>'+ATL[s]+' • '+dBR(a.dt)+(a.loc?' • '+esc(a.loc):'')+(atTempo(a)?' • '+atTempo(a):'')+(a.pago?' • pago em '+dBR(a.pgdt):'')+'</small>'+(ac?'<div style="margin-top:6px">'+ac+'</div>':'')+'</div></div>'}
+let agV='lista',agRf=hoje(),agDia=null;
+const MESL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'],DSEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const capD=()=>S.trab.cap||4,iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+const addD=(d,n)=>{const x=new Date(d+'T12:00');x.setDate(x.getDate()+n);return iso(x)},dWk=d=>new Date(d+'T12:00').getDay();
+const dAts=d=>S.trab.ats.filter(a=>ATD(a)==d&&a.st!='nao').sort((x,y)=>x.dt<y.dt?-1:1);
+const dCor=d=>{const n=dAts(d).length;return dWk(d)==0&&!n?'cz':!n?'cv':n<capD()?'ca':'cr'};
+function agVw(){$('agVw').innerHTML=[['lista','📋 Lista'],['semana','🗓️ Semana'],['mes','📆 Mês']].map(([k,t])=>'<button class="'+(agV==k?'on':'')+'" onclick="agVs(\''+k+'\')">'+t+'</button>').join('')}
+function agVs(k){agV=k;agDia=null;agRf=hoje();agR()}
+function agNav(n){agDia=null;if(agV=='semana')agRf=addD(agRf,7*n);else{const x=new Date(agRf.slice(0,7)+'-01T12:00');x.setMonth(x.getMonth()+n);agRf=iso(x)}agR()}
+function agPick(d){agDia=agDia==d?null:d;agR()}
+function agCap(){const v=prompt('Quantos atendimentos no dia você considera dia cheio?',capD());if(v===null)return;const n=Math.round(+v);if(!(n>=1&&n<=20)){toast('Informe de 1 a 20');return}S.trab.cap=n;save();agR()}
+function agCalR(){let h,t;
+ if(agV=='semana'){const ini=addD(agRf,-((dWk(agRf)+6)%7)),fim=addD(ini,6);t=dBR(ini).slice(0,5)+' a '+dBR(fim).slice(0,5);h='';
+  for(let i=0;i<7;i++){const d=addD(ini,i),L=dAts(d),w=dWk(d),tx=L.length?L.slice(0,2).map(a=>esc(a.cli.split(' ')[0])).join(', ')+(L.length>2?' +'+(L.length-2):''):w==0?'Folga':w==6?'Livre (até 12h)':'Livre';
+   h+='<div class="cd '+dCor(d)+(d==hoje()?' hj':'')+(d==agDia?' sel':'')+'" onclick="agPick(\''+d+'\')"><b>'+DSEM[w]+' '+d.slice(8)+'</b><span>'+tx+'</span><em>'+(L.length||'')+'</em></div>'}}
+ else{const y=+agRf.slice(0,4),m=+agRf.slice(5,7)-1,n=new Date(y,m+1,0).getDate(),off=(new Date(y,m,1).getDay()+6)%7;t=MESL[m]+' '+y;
+  h='<div class="cg">'+['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>'<i>'+x+'</i>').join('')+'</div><div class="cg">'+'<div></div>'.repeat(off);
+  for(let i=1;i<=n;i++){const d=y+'-'+String(m+1).padStart(2,'0')+'-'+String(i).padStart(2,'0'),c=dAts(d).length;
+   h+='<div class="mc '+dCor(d)+(d==hoje()?' hj':'')+(d==agDia?' sel':'')+'" onclick="agPick(\''+d+'\')">'+i+'<small>'+(c||(dWk(d)==6?'½':''))+'</small></div>'}
+  h+='</div>'}
+ $('agCal').innerHTML='<div class="cl"><button class="mini" aria-label="Anterior" onclick="agNav(-1)">‹</button><b>'+t+'</b><button class="mini" aria-label="Próximo" onclick="agNav(1)">›</button></div>'+h+'<div class="lg">🟩 livre • 🟨 com vaga • 🟥 cheio ('+capD()+'+) • ⬜ folga • ½ sábado até 12h <button class="mini" onclick="agCap()">⚙️ Cheio = '+capD()+'</button></div>';
+ const e=$('agL');if(!agDia){e.innerHTML='<div class="emp">Toque num dia para ver os clientes.</div>';return}
+ const L=S.trab.ats.filter(a=>ATD(a)==agDia).sort((x,y)=>x.dt<y.dt?-1:1);
+ e.innerHTML='<div class="cl"><b>'+DSEM[dWk(agDia)]+' '+dBR(agDia)+' • '+L.length+' atendimento'+(L.length==1?'':'s')+'</b><button class="mini" aria-label="Fechar dia" onclick="agPick(\''+agDia+'\')">✖</button></div>'+(L.length?L.map(atCard).join(''):'<div class="emp">Dia livre.</div>')}
+function agR(){const e=$('agL');if(!e)return;const A=S.trab.ats;agVw();$('agC').style.display=agV=='lista'?'':'none';
+ if(agV!='lista')agCalR();else{
  $('agC').innerHTML=AGF.map(([k,t,f])=>{const L=A.filter(f);return '<button class="'+(agF==k?'on':'')+'" onclick="agFil(\''+k+'\')">'+t+' '+(k=='rec'?R(L.reduce((x,a)=>x+ATT(a),0)):L.length)+'</button>'}).join('');
  const f=(AGF.find(x=>x[0]==agF)||AGF[0])[2],asc=agF=='hoje'||agF=='prox',L=A.filter(f).sort((x,y)=>(x.dt<y.dt?-1:1)*(asc?1:-1));
- e.innerHTML=L.length?L.map(atCard).join(''):'<div class="emp">'+({hoje:'Nenhum atendimento hoje.',prox:'Nenhum atendimento marcado pela frente.',atend:'Nenhum atendimento concluído ainda.',nao:'Nenhum atendimento perdido.',rec:'Nada a receber.'})[agF]+'</div>';
+ e.innerHTML=L.length?L.map(atCard).join(''):'<div class="emp">'+({hoje:'Nenhum atendimento hoje.',prox:'Nenhum atendimento marcado pela frente.',atend:'Nenhum atendimento concluído ainda.',nao:'Nenhum atendimento perdido.',rec:'Nada a receber.'})[agF]+'</div>';}
  $('dlCli').innerHTML=[...new Map(A.slice().sort((x,y)=>x.dt<y.dt?-1:1).map(a=>[ATK(a.cli),a.cli])).values()].map(n=>'<option value="'+esc(n)+'">').join('')}
 function agFil(k){agF=k;agR()}
 function atRef(){save();render();if($('mAt').classList.contains('on'))atR();if($('mCl').classList.contains('on'))clR()}
 function atNovo(p){atFrom=p?p.id:null;atCp=p?p.srv.map(x=>({d:x.d,v:x.v})):[];$('anH').textContent=p&&p.st!=null?'Reagendar atendimento':'Novo atendimento';
- $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anD').value=hoje();$('anS').value='08:00';$('mAn').classList.add('on')}
-const clC=n=>{const L=S.trab.ats.filter(a=>ATK(a.cli)==ATK(n)).sort((x,y)=>x.dt<y.dt?1:-1),t=L.find(a=>a.tel);return{L,u:L[0],tel:t?t.tel:'',tid:t?t.id:0,loc:(L.find(a=>a.loc)||{}).loc||''}};
+ $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anD').value=(agV!='lista'&&agDia)||hoje();$('anS').value='08:00';anTpV=p?tpOf(p):'servico';anTpR();$('mAn').classList.add('on')}
+let anTpV='servico';
+function anTpR(){$('anTp').innerHTML=Object.keys(TPN).map(k=>'<button class="'+(anTpV==k?'on':'')+'" onclick="anTpSet(\''+k+'\')">'+TPI[k]+' '+TPN[k]+'</button>').join('');const d=$('anD').value,h=$('anS').value,e=$('anHint');e.style.display=anTpV=='ocorrencia'&&d&&h&&dentroExp(d,h)?'':'none';e.textContent='💡 Ocorrência costuma ser fora do expediente (seg–sex 8h–18h, sáb 8h–12h). Você pode manter este horário.'}
+function anTpSet(k){anTpV=k;anTpR()}
+function atTpS(v){const a=atAch(atId);if(!a||!TPN[v])return;a.tp=v;atRef()}
+const clC=n=>{const L=S.trab.ats.filter(a=>ATK(a.cli)==ATK(n)).sort((x,y)=>x.dt<y.dt?1:-1),t=L.find(a=>a.tel);return{L,u:L[0],tel:t?t.tel:'',tid:t?t.id:0,loc:(L.find(a=>a.loc)||{}).loc||'',geo:(L.find(a=>a.geo)||{}).geo||''}};
+function mapaUrl(g,l){g=(g||'').trim();if(/^https?:\/\//i.test(g))return g;const m=g.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)$/);if(m)return 'https://www.google.com/maps?q='+m[1]+','+m[2];return l?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l):''}
+function mapaAbrir(g,l){const u=mapaUrl(g,l);if(!u){toast('Sem localização nem endereço cadastrado');return}window.open(u,'_blank','noopener')}
+function atGeo(){if(!navigator.geolocation){toast('Localização indisponível neste aparelho');return}toast('Buscando localização…');navigator.geolocation.getCurrentPosition(p=>{if(!atAch(atId)||!$('atG'))return;$('atG').value=p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6);atSet();toast('Localização salva')},()=>toast('Não foi possível obter a localização'),{enableHighAccuracy:true,timeout:15000})}
 function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT').value=c.tel;if(!$('anL').value)$('anL').value=c.loc}}
 function atNovoSave(){const cli=$('anC').value.trim().slice(0,60),d=$('anD').value,h=$('anS').value;if(!cli){toast('Informe o nome do cliente');return}
  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast('Escolha a data');return}if(!/^\d{2}:\d{2}$/.test(h)){toast('Escolha a hora');return}if(S.trab.ats.length>=3000){toast('Limite de atendimentos atingido');return}
- S.trab.ats.push({id:Date.now(),cli,tel:$('anT').value.trim().slice(0,20),loc:$('anL').value.trim().slice(0,80),dt:d+'T'+h,st:'agendado',ent:'',sai:'',srv:atCp.map(x=>({d:x.d,v:x.v})),mat:[],pago:false,pgdt:''});
+ S.trab.ats.push({id:Date.now(),cli,tel:$('anT').value.trim().slice(0,20),loc:$('anL').value.trim().slice(0,80),dt:d+'T'+h,tp:anTpV,geo:clC(cli).geo,st:'agendado',ent:'',sai:'',srv:atCp.map(x=>({d:x.d,v:x.v})),mat:[],pago:false,pgdt:''});
  if(atFrom){const o=atAch(atFrom);if(o&&o.st=='agendado'){o.st='nao';o.ent='';o.sai=''}}atFrom=null;atCp=[];agF=d==hoje()?'hoje':d>hoje()?'prox':'nao';closeM();atRef();toast('Atendimento agendado para '+dBR(d)+' às '+h)}
 function atOpen(id){if(!atAch(id))return;closeM();atId=id;atR();$('mAt').classList.add('on')}
 function atChega(id){const a=atAch(id);if(!a)return;a.ent=nowL();a.sai='';save();render();atOpen(id);toast('Entrada registrada às '+a.ent.slice(11))}
@@ -621,7 +663,7 @@ function atZap(id){const a=atAch(id);if(!a)return;let n=a.tel.replace(/\D/g,'');
 function atSet(){const a=atAch(atId);if(!a)return;const c=$('atC').value.trim().slice(0,60),d=$('atD').value,h=$('atH').value,e=$('atE').value,x=$('atS').value;
  if(!c){toast('O nome do cliente é obrigatório');atR();return}if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!/^\d{2}:\d{2}$/.test(h)){toast('Data ou hora inválida');atR();return}
  if(e&&x&&x<e){toast('A saída é antes da entrada');atR();return}
- a.cli=c;a.tel=$('atT').value.trim().slice(0,20);a.loc=$('atL').value.trim().slice(0,80);a.dt=d+'T'+h;a.ent=e;a.sai=x;atRef()}
+ a.cli=c;a.tel=$('atT').value.trim().slice(0,20);a.loc=$('atL').value.trim().slice(0,80);a.dt=d+'T'+h;a.ent=e;a.sai=x;{const g=$('atG').value.trim().slice(0,120);S.trab.ats.forEach(y=>{if(ATK(y.cli)==ATK(a.cli))y.geo=g})}atRef()}
 function atAgora(k){const a=atAch(atId);if(!a)return;if(k=='ent'){a.ent=nowL();a.sai=''}else{if(!a.ent)a.ent=nowL();a.sai=nowL();if(a.st=='agendado')a.st='atendido'}atRef()}
 function atSv(i,f,v){const a=atAch(atId);if(!a||!a.srv[i])return;if(f=='d')a.srv[i].d=v.trim().slice(0,80);else a.srv[i].v=Math.min(1e7,Math.max(0,+v||0));atRef()}
 function atSvAdd(){const a=atAch(atId),d=$('asD').value.trim().slice(0,80),v=+$('asV').value;if(!a)return;if(!d){toast('Descreva o serviço');return}if(!(v>=0&&v<=1e7)){toast('Valor inválido');return}if(a.srv.length>=50){toast('Limite de serviços');return}a.srv.push({d,v:Math.round(v*100)/100});atRef()}
@@ -636,8 +678,10 @@ function atDel(){const a=atAch(atId);if(!a||!confirm('Excluir este atendimento? 
 function atCli(){const a=atAch(atId);if(a)clOpen(a.cli)}
 function atR(){const a=atAch(atId),e=$('atB');if(!a||!e)return;const s=atS(a),tot=ATT(a),mn=a.mat.filter(m=>!m.cob).reduce((x,m)=>x+m.v,0),b=(t,fn,c)=>'<button class="btn '+(c||'s')+'" style="margin:0" onclick="'+fn+'">'+t+'</button>';
  e.innerHTML='<div class="cl"><b>'+ATL[s]+(a.pago?' em '+dBR(a.pgdt):'')+'</b><button class="mini" onclick="atCli()">👤 Ver cliente</button></div>'
+ +'<label>Tipo</label><select id="atTp" onchange="atTpS(this.value)">'+Object.keys(TPN).map(k=>'<option value="'+k+'"'+(tpOf(a)==k?' selected':'')+'>'+TPI[k]+' '+TPN[k]+'</option>').join('')+'</select>'
  +'<label>Cliente</label><input id="atC" list="dlCli" maxlength="60" value="'+esc(a.cli)+'" onchange="atSet()">'
  +'<div class="row"><div><label>Telefone</label><input id="atT" type="tel" maxlength="20" value="'+esc(a.tel)+'" onchange="atSet()"></div><div><label>Local</label><input id="atL" maxlength="80" value="'+esc(a.loc)+'" onchange="atSet()"></div></div>'
+ +'<label>📍 Localização (link do mapa ou lat,lng)</label><input id="atG" maxlength="120" placeholder="Cole o link do mapa ou use o botão" value="'+esc(a.geo||'')+'" onchange="atSet()"><div class="row" style="margin-top:6px"><button class="btn s" style="margin:0" onclick="atGeo()">📍 Pegar minha posição</button><button class="btn s" style="margin:0" onclick="mapaAbrir($(\'atG\').value,$(\'atL\').value)">🗺️ Abrir no mapa</button></div>'
  +'<div class="row"><div><label>Data</label><input id="atD" type="date" value="'+ATD(a)+'" onchange="atSet()"></div><div><label>Hora</label><input id="atH" type="time" value="'+a.dt.slice(11)+'" onchange="atSet()"></div></div>'
  +'<div class="ct" style="margin:12px 0 4px">⏱️ Tempo no local</div>'
  +'<div class="row st"><div><label>Entrada</label><input id="atE" type="datetime-local" value="'+a.ent+'" onchange="atSet()"></div><div><label>Saída</label><input id="atS" type="datetime-local" value="'+a.sai+'" onchange="atSet()"></div></div>'
@@ -654,14 +698,14 @@ function clOpen(n){clN=n;if(!S.trab.ats.some(a=>ATK(a.cli)==ATK(n)))return;close
 function clNovo(){const c=clC(clN);closeM();atNovo({cli:c.u.cli,tel:c.tel,loc:c.loc,srv:[]})}
 function clR(){const c=clC(clN),L=c.L;if(!L.length){closeM();return}const u=c.u,pg=L.filter(a=>a.st=='atendido'&&a.pago).reduce((x,a)=>x+ATT(a),0),rc=L.filter(a=>a.st=='atendido'&&!a.pago).reduce((x,a)=>x+ATT(a),0);
  $('clH').textContent='👤 '+u.cli;
- $('clB').innerHTML=(c.tel?'<div class="row"><a class="btn s" style="margin:0;text-align:center;text-decoration:none" href="tel:'+esc(c.tel.replace(/[^\d+]/g,''))+'">📞 Ligar</a><button class="btn s" style="margin:0" onclick="atZap('+c.tid+')">💬 WhatsApp</button></div>':'')+(c.loc?'<small style="color:var(--mu)">📍 '+esc(c.loc)+'</small>':'')
+ $('clB').innerHTML=(c.tel?'<div class="row"><a class="btn s" style="margin:0;text-align:center;text-decoration:none" href="tel:'+esc(c.tel.replace(/[^\d+]/g,''))+'">📞 Ligar</a><button class="btn s" style="margin:0" onclick="atZap('+c.tid+')">💬 WhatsApp</button></div>':'')+(c.loc||c.geo?'<div class="row" style="margin:8px 0"><button class="btn s" style="margin:0" onclick="mapaAbrir(clC(clN).geo,clC(clN).loc)">🗺️ Abrir no mapa</button></div>':'')+(c.loc?'<small style="color:var(--mu)">📍 '+esc(c.loc)+'</small>':'')
   +'<div class="g2" style="margin-top:10px"><div class="kpi"><span>✅ Já pago</span><strong>'+R(pg)+'</strong></div><div class="kpi"><span>💰 A receber</span><strong>'+R(rc)+'</strong></div></div><button class="btn" onclick="clNovo()">＋ Novo atendimento</button>'+L.map(atCard).join('')}
 /* ===== Recibo e uso do "Quanto cobrar" (Fase 3) ===== */
 function recTxt(a){const s=a.srv.filter(x=>x.d||x.v),m=a.mat.filter(x=>x.cob&&(x.d||x.v)),ln=x=>'• '+(x.d||'Item')+' — '+R(x.v),eu=S.trab.eu,id=[eu.nome,S.trab.ativ,eu.tel].filter(Boolean).join(' • ');
  return '*'+(a.st=='atendido'?'Recibo de serviço':'Orçamento de serviço')+'*\nCliente: '+a.cli+(a.loc?'\nLocal: '+a.loc:'')+'\nData: '+dBR(a.dt)+(atTempo(a)?'\nTempo no local: '+atTempo(a):'')+(s.length?'\n\nServiços:\n'+s.map(ln).join('\n'):'')+(m.length?'\n\nMateriais:\n'+m.map(ln).join('\n'):'')+'\n\n*Total: '+R(ATT(a))+'*'+(a.st=='atendido'?'\n'+(a.pago?'Pago em '+dBR(a.pgdt):'A receber'):'')+(id?'\n\n— '+id:'')}
 function recGerar(){const a=atAch(atId);if(!a)return;if(!(ATT(a)>0)){toast('Lance os serviços antes de gerar o documento');return}
- const eu=S.trab.eu,m=a.mat.filter(x=>x.cob&&(x.d||x.v)),s=a.srv.filter(x=>x.d||x.v),fz=a.st=='atendido',tb=(L,t)=>'<table>'+L.map(x=>'<tr><td>'+esc(x.d||'Item')+'</td><td>'+R(x.v)+'</td></tr>').join('')+'<tr class="t"><td>'+t+'</td><td>'+R(L.reduce((y,x)=>y+x.v,0))+'</td></tr></table>';
- $('rep').innerHTML='<h1>'+(fz?'Recibo de serviço':'Orçamento de serviço')+'</h1><p><b>Prestador:</b> '+esc([eu.nome||'—',S.trab.ativ,eu.tel].filter(Boolean).join(' • '))+'</p>'
+ const eu=S.trab.eu,m=a.mat.filter(x=>x.cob&&(x.d||x.v)),s=a.srv.filter(x=>x.d||x.v),fz=a.st=='atendido'&&tpOf(a)!='orcamento',tb=(L,t)=>'<table>'+L.map(x=>'<tr><td>'+esc(x.d||'Item')+'</td><td>'+R(x.v)+'</td></tr>').join('')+'<tr class="t"><td>'+t+'</td><td>'+R(L.reduce((y,x)=>y+x.v,0))+'</td></tr></table>';
+ $('rep').innerHTML='<h1>'+(tpOf(a)=='ocorrencia'?(fz?'Recibo de ocorrência':'Ocorrência — orçamento'):fz?'Recibo de serviço':'Orçamento de serviço')+'</h1><p><b>Prestador:</b> '+esc([eu.nome||'—',S.trab.ativ,eu.tel].filter(Boolean).join(' • '))+'</p>'
   +'<p><b>Cliente:</b> '+esc(a.cli)+(a.tel?' • '+esc(a.tel):'')+(a.loc?'<br><b>Local:</b> '+esc(a.loc):'')+'</p><p><b>Data:</b> '+dBR(a.dt)+' às '+a.dt.slice(11)+(atTempo(a)?' • Tempo no local: '+atTempo(a):'')+'</p>'
   +(s.length?'<h2>Serviços</h2>'+tb(s,'Total de serviços'):'')+(m.length?'<h2>Materiais</h2>'+tb(m,'Total de materiais'):'')
   +'<h2>'+(a.pago?'Total pago':'Total')+'</h2><table><tr class="t"><td>'+(fz?(a.pago?'Pago em '+dBR(a.pgdt):'A receber'):'Valor do orçamento')+'</td><td>'+R(ATT(a))+'</td></tr></table>'
