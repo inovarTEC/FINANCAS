@@ -648,7 +648,7 @@ function anTpR(){$('anTp').innerHTML=Object.keys(TPN).map(k=>'<button class="'+(
 function anTpSet(k){anTpV=k;anTpR()}
 function atTpS(v){const a=atAch(atId);if(!a||!TPN[v])return;a.tp=v;atRef()}
 const clC=n=>{const L=S.trab.ats.filter(a=>ATK(a.cli)==ATK(n)).sort((x,y)=>x.dt<y.dt?1:-1),t=L.find(a=>a.tel);return{L,u:L[0],tel:t?t.tel:'',tid:t?t.id:0,loc:(L.find(a=>a.loc)||{}).loc||'',geo:(L.find(a=>a.geo)||{}).geo||''}};
-function mapaUrl(g,l){g=(g||'').trim();if(/^https?:\/\//i.test(g))return g;const m=g.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)$/);if(m)return 'https://www.google.com/maps?q='+m[1]+','+m[2];return l?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l):''}
+function mapaUrl(g,l){g=(g||'').trim();if(/^https?:\/\//i.test(g))return g;const m=g.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)$/);if(m)return iosApp()?'maps://?q='+m[1]+','+m[2]:'https://www.google.com/maps?q='+m[1]+','+m[2];return l?(iosApp()?'maps://?q=':'https://www.google.com/maps/search/?api=1&query=')+encodeURIComponent(l):''}
 function mapaAbrir(g,l){const u=mapaUrl(g,l);if(!u){toast('Sem localização nem endereço cadastrado');return}abrirExt(u)}
 function atGeo(){if(!navigator.geolocation){toast('Localização indisponível neste aparelho');return}toast('Buscando localização…');navigator.geolocation.getCurrentPosition(p=>{if(!atAch(atId)||!$('atG'))return;$('atG').value=p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6);atSet();toast('Localização salva')},()=>toast('Não foi possível obter a localização'),{enableHighAccuracy:true,timeout:15000})}
 function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT').value=c.tel;if(!$('anL').value)$('anL').value=c.loc}}
@@ -782,8 +782,20 @@ function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
 const iosApp=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches);
 function zapUrl(n,t){return iosApp()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
-function abrirExt(u){const a=document.createElement('a');a.href=u;if(/^https?:/i.test(u)){a.target='_blank';a.rel='noopener noreferrer'}a.style.display='none';document.body.appendChild(a);a.click();a.remove()}
-function voltou(){const t=$('toast');if(t){clearTimeout(t._t);t.style.display='none'}if(!document.querySelector('.mo.on'))document.documentElement.classList.remove('lock');const e=document.activeElement;if(e&&e!==document.body&&e.blur)e.blur();render()}
+function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
+function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
+ localStorage.setItem(KEY+'_nav',JSON.stringify({t:Date.now(),tab:t?t.id.slice(2):'inicio',mo:m?m.id:'',atId,clN,agV,agRf,agDia,agBack,agF,tv:q('#tvs','v'),vs:q('#vsub','p'),cx:q('#cxs','v')}));
+ document.addEventListener('pointerdown',navClear,{once:true,capture:true})}catch(e){}}
+function navRestore(){let n;try{n=JSON.parse(localStorage.getItem(KEY+'_nav')||'null');navClear()}catch(e){return}
+ if(!n||!S.perfOk||!(Date.now()-n.t<6e5))return;
+ try{const ok=(v,L)=>L.includes(v),dt=v=>/^\d{4}-\d{2}-\d{2}$/.test(v);
+  if(ok(n.agV,['lista','semana','mes'])){agV=n.agV;agRf=dt(n.agRf)?n.agRf:hoje();agDia=dt(n.agDia)?n.agDia:null;agBack=ok(n.agBack,['semana','mes'])?n.agBack:null}
+  if(AGF.some(f=>f[0]==n.agF))agF=n.agF;
+  render();go(String(n.tab));
+  if(ok(n.tv,['ag','res','fer']))trv(n.tv);if(ok(n.vs,['res','his','seg','ofi']))vsub(n.vs);if(ok(n.cx,['dia','ct']))cxv(n.cx);
+  if(n.mo=='mAt'&&atAch(+n.atId))atOpen(+n.atId);else if(n.mo=='mCl'&&n.clN&&clC(String(n.clN)).L.length)clOpen(String(n.clN))}catch(e){}}
+function abrirExt(u){navSave();const a=document.createElement('a');a.href=u;if(/^https?:/i.test(u)){a.target='_blank';a.rel='noopener noreferrer'}a.style.display='none';document.body.appendChild(a);a.click();a.remove()}
+function voltou(){navClear();const t=$('toast');if(t){clearTimeout(t._t);t.style.display='none'}if(!document.querySelector('.mo.on'))document.documentElement.classList.remove('lock');const e=document.activeElement;if(e&&e!==document.body&&e.blur)e.blur();render()}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible')voltou()});
 window.addEventListener('pageshow',e=>{if(e.persisted)voltou()});
 function alBack(k){if(S.snooze)delete S.snooze[k];save();render()}
@@ -1143,6 +1155,7 @@ $('obi').innerHTML=OBI.map(i=>'<option value="'+i+'">'+i+' '+OBN[i]+'</option>')
 $('sp').innerHTML=Array.from({length:12},(_,i)=>'<option>'+(i+1)+'</option>').join('');
 render();
 if(!S.perfOk)$('mWel').classList.add('on');
+navRestore();
 </script>
 </body>
 </html>
