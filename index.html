@@ -60,7 +60,9 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .btn.s{background:transparent;color:var(--tx);border:1px solid var(--bd)}.btn.w{background:#16A34A;color:#fff}.btn.v{background:rgba(139,92,246,.12);color:#7C3AED;border:2px dashed #8B5CF6}
 [data-theme=noturno] .btn.v{color:#C4B5FD}
 .row{display:flex;gap:8px}.row>*{flex:1;min-width:0}@media(max-width:400px){.row.st{flex-direction:column}.row.rw{flex-wrap:wrap}.row.rw>input:first-child{flex:1 1 100%}}}
-.it{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd)}.it:last-child{border-bottom:0}
+.it{display:flex;gap:10px;padding:12px 10px;border-radius:10px}.chk:nth-child(even),.it:nth-child(even){background:rgba(100,116,139,.12)}
+.acc{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:13px 14px;margin-top:8px;border:1px solid var(--bd);background:var(--ph);color:var(--tx);border-radius:12px;font-weight:700;cursor:pointer;font-size:calc(14px*var(--fs))}.acc small{font-weight:600;opacity:.8;white-space:nowrap}.acc.on{background:var(--pr);color:var(--pt);border-color:var(--pr)}
+.acs{margin:8px 0}.acb{padding:2px 0 10px}
 .it .b{flex:1;min-width:0}.it .t{display:flex;justify-content:space-between;gap:8px;font-weight:800}.it .t span:last-child{color:var(--ac);white-space:nowrap}
 .it small{display:block;color:var(--mu);font-size:calc(12px*var(--fs));margin-top:3px;overflow-wrap:anywhere}
 .mini{border:1px solid var(--bd);background:var(--ph);color:var(--tx);border-radius:8px;padding:3px 7px;font-size:13px;cursor:pointer;margin-left:4px}
@@ -76,9 +78,10 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .mc{touch-action:manipulation;aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;font-weight:700}.mc small{font-size:calc(10px*var(--fs));min-height:1em}
 .cz{background:rgba(128,128,128,.15)}.cv{background:rgba(22,163,74,.22)}.ca{background:rgba(245,158,11,.32)}.cr{background:rgba(220,38,38,.3)}.hj{box-shadow:inset 0 0 0 2px var(--pr)}.sq{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;border:1px solid var(--bd)}
 .lg{font-size:calc(11.5px*var(--fs));color:var(--mu);margin:6px 0}
-.chk{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd);cursor:pointer}
-.chk b{width:24px;height:24px;border-radius:7px;border:2px solid var(--pr);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
-.chk.d b{background:#10B981;border-color:#10B981}.chk.d span{text-decoration:line-through;color:var(--mu)}
+.chk{display:flex;align-items:center;gap:10px;padding:14px 10px;border-radius:10px;cursor:pointer}
+.chk b{width:28px;height:28px;border-radius:7px;border:2px solid var(--pr);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.chk.d b{background:#10B981;border-color:#10B981}.chk:not(.d) span{font-weight:600}.chk.d{opacity:.8}
+.chk.d span{text-decoration:line-through;color:var(--mu)}
 .chk span{flex:1}.chk em{font-style:normal;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:#FEF3C7;color:#B45309}.chk.d em{background:#D1FAE5;color:#065F46}
 .cr{background:var(--ph);border:1px solid var(--bd);border-radius:14px;padding:13px;margin-top:12px}
 .cl{display:flex;justify-content:space-between;margin-bottom:8px;font-size:calc(13px*var(--fs))}
@@ -165,9 +168,9 @@ html.lock,html.lock body{overflow:hidden}
   <button class="btn" onclick="addG()">Registrar gasto</button><div id="gL" style="margin-top:8px"></div></div>
  <div class="card"><div class="ct">📋 Minhas listas</div>
   <div class="seg" id="ltS" style="margin:0 0 8px"><button class="on" data-v="compra" onclick="ltSet('compra')">🛒 Lista de compras</button><button data-v="servico" onclick="ltSet('servico')">🧹 Serviço doméstico</button></div>
-  <div class="chips" id="lc"></div>
   <input id="ln" maxlength="60" placeholder="Nome da lista (ex.: Mercado, Farmácia)">
-  <button class="btn s" id="ladd" onclick="addL('casa')">+ Criar lista</button><div id="lB"></div></div>
+  <button class="btn s" id="ladd" onclick="addL('casa')">+ Criar lista</button>
+  <div class="chips" id="lc"></div><div id="lB"></div></div>
   <div class="card" id="cpC"><div class="ct">🧾 Compras finalizadas</div><div id="cpL"></div></div>
  </div>
  <div id="cx-ct" style="display:none">
@@ -235,9 +238,9 @@ html.lock,html.lock body{overflow:hidden}
   <button class="btn" onclick="usaAt()">➕ Usar em um atendimento</button>
   <button class="btn w" onclick="zap()">📲 Enviar orçamento no WhatsApp</button>
   <button class="btn s" onclick="copiar()">📋 Copiar orçamento</button></div>
- <div class="card"><div class="ct">📋 Checklist de serviço</div><div class="chips" id="tsc"></div>
-  <input id="tsn" maxlength="60" placeholder="Nome do serviço (ex.: Instalar chuveiro, Cliente João)">
-  <button class="btn s" onclick="addL('trab')">+ Criar checklist</button><div id="tsB"></div></div>
+ <div class="card"><div class="ct">📋 Checklist de serviço</div><input id="tsn" maxlength="60" placeholder="Nome do serviço (ex.: Instalar chuveiro, Cliente João)">
+  <button class="btn s" onclick="addL('trab')">+ Criar checklist</button>
+  <div class="chips" id="tsc"></div><div id="tsB"></div></div>
  </div>
 </section>
 
@@ -810,7 +813,7 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const APP_V='v29',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const APP_V='v31',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
@@ -892,7 +895,9 @@ function hist(){
   +'<div style="margin-top:6px">'+(r.t=='s'||r.t=='f'?'':'<button class="mini" onclick="openRec(null,'+r.id+')">✏️ Editar</button>')+'<button class="mini" onclick="delRec('+r.id+')">🗑️ Apagar</button></div></div></div>').join(''):'<div class="emp">Nada por aqui ainda. Toque em Abastecer, Oficina ou IPVA na tela Início para registrar o primeiro gasto.</div>';
 }
 
-function chk(){const L=car().chk||[];$('cL').innerHTML=L.length?L.map((i,n)=>'<div class="chk '+(i.d?'d':'')+'" onclick="tgC('+n+')"><b>'+(i.d?'✓':'')+'</b><span>'+esc(i.t)+'</span><em>'+(i.d?'Feito':'Pendente')+'</em><button class="mini" onclick="event.stopPropagation();dlC('+n+')">🗑️</button></div>').join(''):'<div class="emp">Lista vazia. Digite um item acima e toque em +.</div>'}
+function chk(){const L=car().chk||[],row=(i,n)=>'<div class="chk '+(i.d?'d':'')+'" onclick="tgC('+n+')"><b>'+(i.d?'✓':'')+'</b><span>'+esc(i.t)+'</span><em>'+(i.d?'Feito':'Pendente')+'</em><button class="mini" onclick="event.stopPropagation();dlC('+n+')">🗑️</button></div>',P=[],D=[];L.forEach((i,n)=>(i.d?D:P).push(row(i,n)));
+ $('cL').innerHTML=L.length?P.join('')+(D.length?'<div class="acc" onclick="tgDC()"><span>✔ Concluídos ('+D.length+')</span><small>'+(cdOpen.car?'▾':'▸')+'</small></div>'+(cdOpen.car?D.join(''):''):''):'<div class="emp">Lista vazia. Digite um item acima e toque em +.</div>'}
+function tgDC(){cdOpen.car=!cdOpen.car;chk()}
 function tgC(n){const i=car().chk[n];i.d=!i.d;save();chk();home()}
 function dlC(n){car().chk.splice(n,1);save();chk();home()}
 function addC(){const v=$('nc').value.trim();if(!v||!car().id)return;car().chk.unshift({t:v,d:false});$('nc').value='';save();chk();home()}
@@ -988,7 +993,10 @@ function voz(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
 function render(){home();hist();chk();man();calc();casa();lstR('trab');contas();plano();trR();agR();aplicaEsp()}
 applyTheme(S.tema||(matchMedia('(prefers-color-scheme: dark)').matches?'noturno':'executivo'));
 const CC=['Mercado','Lanche na rua','Transporte','Lazer','Saúde','Outros'],cmes=dt=>inM(dt,0);
-const CL={compra:null,servico:null};let tl=null,ltp='compra',itEd=null;
+const CL={compra:null,servico:null};let tl=null,ltp='compra',itEd=null,cdOpen={},acCl={};
+function acT(ar,id){if(id==selOf(ar)){acCl[ar]=acCl[ar]==id?null:id;lstR(ar)}else{acCl[ar]=null;selL(ar,id)}}
+function tgD(ar,id){cdOpen[ar+id]=!cdOpen[ar+id];lstR(ar)}
+const ordIt=(l,sv,ar)=>{const ix=l.itens.map((_,m)=>m);if(sv)return ix;const P=ix.filter(m=>!l.itens[m].d),D=ix.filter(m=>l.itens[m].d);return D.length?P.concat([-1],cdOpen[ar+l.id]?D:[]):P};
 function addG(){const d=$('gd').value.trim(),p=+$('gp').value||0;if(!d||p<=0){toast('Informe a descrição e o valor');return}S.casa.gastos.unshift({id:Date.now(),dt:nowL(),cat:$('gc').value,d,p});$('gd').value='';$('gp').value='';save();casa()}
 function delG(id){S.casa.gastos=S.casa.gastos.filter(g=>g.id!=id);save();casa()}
 const LID={casa:{c:'lc',n:'ln',i:'li',B:'lB',T:'lTot'},trab:{c:'tsc',n:'tsn',i:'tsi',B:'tsB',T:'tsTot'}};
@@ -1012,13 +1020,14 @@ function lstR(ar){const I=LID[ar],L=lsOf(ar),ce=$(I.c),be=$(I.B);if(!ce||!be)ret
  if(!LA(ar)&&L.length){if(ar=='trab')tl=L[0].id;else CL[ltp]=L[0].id}
  if(ar=='casa'){const c=t=>S.casa.listas.filter(x=>x.tipo==t).length;document.querySelector('#ltS button[data-v=compra]').textContent='🛒 Lista de compras ('+c('compra')+')';document.querySelector('#ltS button[data-v=servico]').textContent='🧹 Serviço doméstico ('+c('servico')+')'}
  const l=LA(ar),q="'"+ar+"'";
- ce.innerHTML=L.map(x=>'<button class="'+(x.id==selOf(ar)?'on':'')+'" onclick="selL('+q+','+x.id+')">'+(ar=='trab'?'📋 ':x.tipo=='compra'?'🛒 ':'🧹 ')+esc(x.nome)+'</button>').join('')||'<div class="emp">'+(ar=='trab'?'Nenhum checklist ainda. Crie o primeiro abaixo.':ltp=='compra'?'Nenhuma lista de compras ainda. Crie a primeira abaixo.':'Nenhum serviço doméstico ainda. Crie o primeiro abaixo.')+'</div>';
- if(!l){be.innerHTML='';return}
+ ce.className='acs';const op=acCl[ar]===selOf(ar)?0:selOf(ar),acH=x=>{const on=x.id==op,n=x.itens.length,k=x.itens.filter(i=>i.d).length;return '<div class="acc'+(on?' on':'')+'" onclick="acT('+q+','+x.id+')"><span>'+(ar=='trab'?'📋 ':x.tipo=='compra'?'🛒 ':'🧹 ')+esc(x.nome)+'</span><small>'+k+' de '+n+(on?' ▾':' ▸')+'</small></div>'},
+ ceH=body=>L.map(x=>acH(x)+(x.id==op&&l&&x.id==l.id?'<div class="acb">'+body+'</div>':'')).join('')||'<div class="emp">'+(ar=='trab'?'Nenhum checklist ainda. Crie o primeiro abaixo.':ltp=='compra'?'Nenhuma lista de compras ainda. Crie a primeira abaixo.':'Nenhum serviço doméstico ainda. Crie o primeiro abaixo.')+'</div>';
+ if(!l){ce.innerHTML=ceH('');be.innerHTML='';return}
  const sv=l.tipo!='compra',n=l.itens.length,k=l.itens.filter(i=>i.d).length;
  let h='<div class="row" style="margin-top:10px"><input id="'+I.i+'" maxlength="120" placeholder="'+(sv?'Próxima etapa…':'Item para comprar…')+'" onkeydown="if(event.keyCode==13)addI('+q+')"><button class="btn" style="flex:0 0 56px;margin:0" onclick="addI('+q+')">+</button></div>';
  const tt='<div id="'+I.T+'" class="ins" style="margin:10px 0 0">';
  h+=sv?tt+(n&&k==n?'🎉 <b>Serviço concluído!</b>':'✅ '+k+' de '+n+' etapas concluídas')+'<div style="height:8px;border-radius:8px;background:var(--bd);overflow:hidden;margin-top:6px"><div style="height:100%;width:'+(n?Math.round(k/n*100):0)+'%;background:var(--ac)"></div></div></div>':tt+'</div>';
- h+='<div style="margin-top:6px">'+(n?l.itens.map((i,m)=>{
+ h+='<div style="margin-top:6px">'+(n?ordIt(l,sv,ar).map(m=>{if(m<0)return '<div class="acc" onclick="tgD('+q+','+l.id+')"><span>✔ Concluídos ('+k+')</span><small>'+(cdOpen[ar+l.id]?'▾':'▸')+'</small></div>';const i=l.itens[m];
   if(sv&&itEd&&itEd.ar==ar&&itEd.n==m)return '<div class="chk"><input id="ied" maxlength="120" value="'+esc(i.t)+'" onkeydown="if(event.keyCode==13)svI();if(event.keyCode==27)cnI('+q+')" style="flex:1;padding:7px"><button class="mini" onclick="svI()">✓</button><button class="mini" onclick="cnI('+q+')">✕</button></div>';
   return '<div class="chk '+(i.d?'d':'')+'" onclick="tgI('+q+','+m+')"><b>'+(i.d?'✓':'')+'</b><span>'+(sv?(m+1)+'. ':'')+esc(i.t)+'</span>'
    +(sv?'<button class="mini" aria-label="Subir" '+(m?'':'disabled')+' onclick="event.stopPropagation();mvI('+q+','+m+',-1)">↑</button><button class="mini" aria-label="Descer" '+(m<n-1?'':'disabled')+' onclick="event.stopPropagation();mvI('+q+','+m+',1)">↓</button><button class="mini" aria-label="Editar" onclick="event.stopPropagation();edI('+q+','+m+')">✏️</button>'
@@ -1027,7 +1036,7 @@ function lstR(ar){const I=LID[ar],L=lsOf(ar),ce=$(I.c),be=$(I.B);if(!ce||!be)ret
  if(sv&&k)h+='<button class="btn s" onclick="rsL('+q+')">↺ Reiniciar etapas</button>';
  if(!sv&&n)h+='<button class="btn" onclick="openFin()">✅ Finalizar compra</button>';
  h+='<button class="btn s" onclick="delL('+q+')">🗑️ Apagar '+(sv?'este serviço':'esta lista')+'</button>';
- be.innerHTML=h}
+ ce.innerHTML=ceH(h);be.innerHTML=''}
 /* ===== Compras finalizadas ===== */
 let cpOpen=null;
 function openFin(){const l=LA('casa');if(!l||l.tipo!='compra'||!l.itens.length){toast('Adicione itens à lista primeiro');return}
