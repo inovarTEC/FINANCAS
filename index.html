@@ -117,7 +117,7 @@ html.lock,html.lock body{overflow:hidden}
 <section class="tab on" id="t-inicio">
  <div class="card" id="ov"></div>
  <div class="card" id="obI" onclick="go('plano')" style="cursor:pointer;display:none"></div>
- <div class="card" id="al"><div class="ct">🔔 Agenda e pendências</div><div id="alL"></div></div>
+ <div class="card" id="al"><div class="ct" id="alT">🔔 Agenda e pendências</div><div id="alL"></div></div>
 </section>
 
 <section class="tab" id="t-veic">
@@ -794,7 +794,7 @@ function home(){
  const pos=ks.filter(k=>c[k]>0).sort((a,b)=>c[b]-c[a]);
  $('ins').innerHTML=!pos.length?'💡 Registre seu primeiro gasto para ver a análise aqui.':pos.length==1?'💡 Todo o gasto do período foi com <b>'+pos[0]+'</b>.':'💡 Seu maior gasto foi com <b>'+pos[0]+'</b> e o menor foi com <b>'+pos[pos.length-1]+'</b>.';
  const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')',p:c.uso,car:c.id,k:'pd:'+c.id+':'+String(i.t).replace(/\W/g,'').slice(0,20)})));
- $('alL').innerHTML=alHtml(ag,pend);
+ $('alT').textContent=S.esp=='trabalho'?'🔔 Agenda e pendências':'🔔 Pendências';$('alL').innerHTML=alHtml(ag,pend);
  $('dot').style.display=alVis?'block':'none';
 }
 let alSh=false,alVis=0;
@@ -802,18 +802,20 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  add=(L,p,tab,sub,anc)=>L.forEach(h=>{const x=P(h);if(x.p=='geral')x.p=p;x.tab=tab;x.sub=sub;x.anc=anc=='sg'&&/Financiamento/.test(x.h)?'fn':anc;it.push(x)});
  ag.forEach(r=>{const cr=S.cars.find(c=>c.id==r.vid);it.push({h:'🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button>',p:cr?cr.uso:'pessoal',car:0,tab:'',k:'',m:'f'})});
  add(sgAl(),'pessoal','veic','seg','sg');add(ctAl(),'pessoal','casa','ct','ctL');add(plAl(),'pessoal','plano','','plT');add(ecoAl(),'pessoal','casa','dia','gL');add(manAl(),'pessoal','veic','ofi','manL');add(agAl(),'trabalho','prof','rec','agL');add(bkAl(),'geral','','','');
+ S.casa.listas.forEach(l=>{const n=l.itens.filter(i=>!i.d).length;if(!n)return;const t=l.tipo=='trabalho',c=l.tipo=='compra';it.push({h:(t?'📋 <b>Checklist de serviço:</b> ':c?'🛒 <b>Lista de compras:</b> ':'🧹 <b>Serviço doméstico:</b> ')+esc(l.nome)+' — '+n+(c?' ite'+(n>1?'ns':'m'):' etapa'+(n>1?'s':''))+' pendente'+(n>1?'s':''),p:t?'trabalho':'pessoal',car:0,tab:t?'prof':'casa',sub:t?'fer':'dia',anc:t?'tsc':'lc',lst:l.tipo+':'+l.id,k:'ls:'+l.id,m:'s'})});
  pend.forEach(i=>it.push({h:'⏳ <b>Pendente na oficina:</b> '+esc(i.t),p:i.p,car:i.car,tab:'veic',sub:'ofi',anc:'cL',k:i.k,m:'s'}));
+ for(let i=it.length;i--;)if(it[i].p!=S.esp&&it[i].p!='geral')it.splice(i,1);
  it.forEach(x=>x.u=/venceu|vence hoje|atrasad|vencida|vence agora|encerrada|passaram/i.test(x.h)||x.h.includes('⚠️')?0:3);
- const rk=x=>x.u+(x.p==S.esp?0:x.p=='geral'?1:2),TG={trabalho:'💼 Trabalho',pessoal:'👤 Pessoal'},NM2={trabalho:'Trabalho',pessoal:'Pessoal'},sn=S.snooze||{},hd=x=>x.m!='f'&&x.k&&sn[x.k]&&sn[x.k]>hoje();
+ const rk=x=>x.u+(x.p=='geral'?1:0),sn=S.snooze||{},hd=x=>x.m!='f'&&x.k&&sn[x.k]&&sn[x.k]>hoje();
  it.sort((x,y)=>rk(x)-rk(y));
  const vis=it.filter(x=>!hd(x)),hid=it.filter(hd);alVis=vis.length;
  const row=x=>{const sz=x.m!='f'&&x.k,hh=hd(x),hb=x.h.includes('onclick'),B='<button class="mini" style="margin:6px 4px 0 0" onclick="',
-  b=(x.tab&&!x.h.includes('class="lk"')?B+'alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+',\''+(x.sub||'')+'\',\''+(x.anc||'')+'\',\''+(sz?x.k:'')+'\',\''+(sz?x.m:'')+'\')">Abrir'+(x.p!=S.esp&&NM2[x.p]?' em '+NM2[x.p]:'')+' ›</button>':'')+(sz?(hh?B+'alBack(\''+x.k+'\')">↩ Mostrar de novo</button>':B+'alSoneca(\''+x.k+'\',\''+x.m+'\')">'+(x.m=='d'?'✖ Dispensar':'⏰ Lembrar amanhã')+'</button>'):'');
-  return '<div class="al">'+(hh?'<span class="tg">💤</span>':'')+(TG[x.p]?'<span class="tg">'+TG[x.p]+'</span>':'')+x.h+(b?(hb?'':'<br>')+b:'')+'</div>'};
+  b=(x.tab&&!x.h.includes('class="lk"')?B+'alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+',\''+(x.sub||'')+'\',\''+(x.anc||'')+'\',\''+(sz?x.k:'')+'\',\''+(sz?x.m:'')+'\',\''+(x.lst||'')+'\')">Abrir ›</button>':'')+(sz?(hh?B+'alBack(\''+x.k+'\')">↩ Mostrar de novo</button>':B+'alSoneca(\''+x.k+'\',\''+x.m+'\')">'+(x.m=='d'?'✖ Dispensar':'⏰ Lembrar amanhã')+'</button>'):'');
+  return '<div class="al">'+(hh?'<span class="tg">💤</span>':'')+x.h+(b?(hb?'':'<br>')+b:'')+'</div>'};
  return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const APP_V='v31',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const APP_V='v32',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
@@ -832,11 +834,12 @@ function voltou(){navClear();const t=$('toast');if(t){clearTimeout(t._t);t.style
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible')voltou()});
 window.addEventListener('pageshow',e=>{if(e.persisted)voltou()});
 function alBack(k){if(S.snooze)delete S.snooze[k];save();render()}
-function alIr(p,t,car,sub,anc,k,m){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car}
+function alIr(p,t,car,sub,anc,k,m,lst){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car}
  const adia=k&&m&&m!='f';if(adia){S.snooze=S.snooze||{};S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1)}
  if(car||adia)save();
- if(S.esp!=p){setEsp(p);toast('Perfil trocado para '+(p=='trabalho'?'Trabalho':'Pessoal'))}else{render();if(adia)toast('Aviso adiado até amanhã')}
- go(t);if(t=='veic'&&sub)vsub(sub);else if(t=='casa'&&sub)cxv(sub);else if(t=='prof'){trv('ag');agVs('lista');if(sub=='rec'){agF='rec';agR()}}
+ render();if(adia)toast('Aviso adiado até amanhã');
+ go(t);if(t=='veic'&&sub)vsub(sub);else if(t=='casa'&&sub)cxv(sub);else if(t=='prof'){if(sub=='fer')trv('fer');else{trv('ag');agVs('lista');if(sub=='rec'){agF='rec';agR()}}}
+ if(lst){const q=lst.split(':');acCl.casa=acCl.trab=null;if(q[0]=='trabalho')selL('trab',+q[1]);else{ltSet(q[0]);selL('casa',+q[1])}}
  if(anc)setTimeout(()=>{const e=$(anc);if(e)e.scrollIntoView({block:'start',behavior:'smooth'})},80)}
 function ctPagar(id){ctPg(id);toast('Conta marcada como paga')}
 function pagar(id){const r=S.regs.find(x=>x.id==id);if(r){r.ag=false;save();render();toast('Registro marcado como pago')}}
@@ -1113,16 +1116,18 @@ function plAl(){const r=plRenda(),o=[];if(r<=0)return o;const p=S.plano,lim=r*(1
  if(b.t>0&&c.t>b.t)o.push(mkK('pl:c:'+mesK(),'s')+'📈 <b>Atenção:</b> você já gastou mais do que no mês passado inteiro ('+R(b.t)+')');return o}
 function plano(){const p=S.plano;$('ps').value=p.sal||'';$('pgu').value=p.gu;$('pin').value=p.iv;
  $('peL').innerHTML=p.extras.map(e=>'<div class="it"><div class="b"><div class="t"><span>'+esc(e.nome)+'</span><span>'+R(e.v)+'</span></div><small>'+({semanal:'Toda semana',mensal:'Todo mês',unico:'Só em '+e.mk})[e.fr]+'</small></div><button class="mini" onclick="plDel('+e.id+')">🗑️</button></div>').join('');plCalc()}
-function ov(){const x=vg(0),r=plRenda(),pend=plPend(),pes=x.pv,casa=x.ca+x.cc,trab=x.tv+x.tg,gasto=pes+casa+trab,ganho=r+x.gt,sobra=ganho-gasto-pend,luc=x.gt-trab,
- wk=S.esp=='trabalho'||x.gt>0||trab>0||S.trab.ganhos.length>0||S.trab.gastos.length>0||S.trab.ats.length>0||S.cars.some(c=>c.uso=='trabalho'),rc=atRec(),
- k=(ic,t,v,sm)=>'<div class="kpi"><span>'+ic+' '+t+'</span><strong>'+R(v)+'</strong>'+(sm?'<small>'+sm+'</small>':'')+'</div>',pc=ganho>0?Math.min(100,Math.round((gasto+pend)/ganho*100)):0;
- $('ov').innerHTML='<div class="ct">🧭 Visão geral do mês</div>'
- +(ganho>0?'<div style="font-size:calc(15px*var(--fs));line-height:1.45">Neste mês você ganhou <b>'+R(ganho)+'</b>, gastou <b>'+R(gasto)+'</b> e '+(sobra>=0?'sobram':'faltam')+' <b style="color:'+(sobra>=0?'var(--ac)':'#EF4444')+'">'+R(Math.abs(sobra))+'</b>'+(pend>0?' (já contando '+R(pend)+' a pagar)':'')+'.</div><div style="height:10px;border-radius:8px;background:var(--bd);overflow:hidden;margin:10px 0"><div style="height:100%;width:'+pc+'%;background:'+(sobra<0?'#EF4444':'var(--ac)')+'"></div></div><small style="color:var(--mu)">'+pc+'% do que você ganhou já está comprometido.</small>'
-  :'<div style="font-size:calc(15px*var(--fs));line-height:1.45">Você gastou <b>'+R(gasto)+'</b> neste mês'+(pend>0?' e tem <b>'+R(pend)+'</b> a pagar':'')+'. Informe seus ganhos para ver quanto sobra.</div><button class="btn s" onclick="irPlano()">🎯 Definir minha renda</button>')
- +'<div class="g2" style="margin-top:12px">'+k('💼','Renda',r,'fixa '+R(+S.plano.sal||0)+' • extras '+R(r-(+S.plano.sal||0)))
- +(wk?k('🛠️','Ganhos do trabalho',x.gt):'')+k('👤','Veículos pessoais',pes)+k('🏠','Casa e contas',casa)
- +(wk?k('🧰','Gastos do trabalho',trab,'inclui veículos e materiais')+k(luc<0?'⚠️':'📈','Lucro do trabalho',luc)+(rc.n?k('💰','A receber de clientes',rc.v,rc.n+' atendimento'+(rc.n>1?'s':'')):''):'')+'</div>'
- +'<div class="row" style="margin-top:12px"><button class="btn" style="margin:0" onclick="gqOpen()">＋ Gasto rápido</button>'+(S.esp=='trabalho'?'<button class="btn s" style="margin:0" onclick="gqGanho()">＋ Ganho</button>':'')+'</div>'}
+function ov(){const x=vg(0),pend=plPend(),rc=atRec(),tr=S.esp=='trabalho',
+ k=(ic,t,v,sm)=>'<div class="kpi"><span>'+ic+' '+t+'</span><strong>'+R(v)+'</strong>'+(sm?'<small>'+sm+'</small>':'')+'</div>',
+ bar=(pc,bad)=>'<div style="height:10px;border-radius:8px;background:var(--bd);overflow:hidden;margin:10px 0"><div style="height:100%;width:'+pc+'%;background:'+(bad?'#EF4444':'var(--ac)')+'"></div></div>',
+ fs='<div style="font-size:calc(15px*var(--fs));line-height:1.45">';let h='<div class="ct">🧭 Visão geral do mês</div>';
+ if(tr){const g=x.tv+x.tg,luc=x.gt-g,pc=x.gt>0?Math.min(100,Math.round(g/x.gt*100)):0;
+  h+=x.gt>0||g>0?fs+'Neste mês você faturou <b>'+R(x.gt)+'</b>, gastou <b>'+R(g)+'</b> e o lucro é <b style="color:'+(luc>=0?'var(--ac)':'#EF4444')+'">'+R(luc)+'</b>.</div>'+(x.gt>0?bar(pc,luc<0)+'<small style="color:var(--mu)">'+pc+'% do que você faturou foi gasto no trabalho.</small>':''):fs+'Nenhum ganho ou gasto do trabalho neste mês. Registre um atendimento ou um ganho para ver o lucro.</div>';
+  h+='<div class="g2" style="margin-top:12px">'+k('🛠️','Ganhos do trabalho',x.gt)+k('🧰','Gastos do trabalho',g,'inclui veículos e materiais')+k(luc<0?'⚠️':'📈','Lucro do trabalho',luc)+(rc.n?k('💰','A receber de clientes',rc.v,rc.n+' atendimento'+(rc.n>1?'s':'')):'')+'</div>'}
+ else{const r=plRenda(),pes=x.pv,casa=x.ca+x.cc,gasto=pes+casa,sobra=r-gasto-pend,pc=r>0?Math.min(100,Math.round((gasto+pend)/r*100)):0;
+  h+=r>0?fs+'Neste mês você ganhou <b>'+R(r)+'</b>, gastou <b>'+R(gasto)+'</b> e '+(sobra>=0?'sobram':'faltam')+' <b style="color:'+(sobra>=0?'var(--ac)':'#EF4444')+'">'+R(Math.abs(sobra))+'</b>'+(pend>0?' (já contando '+R(pend)+' a pagar)':'')+'.</div>'+bar(pc,sobra<0)+'<small style="color:var(--mu)">'+pc+'% do que você ganhou já está comprometido.</small>'
+   :fs+'Você gastou <b>'+R(gasto)+'</b> neste mês'+(pend>0?' e tem <b>'+R(pend)+'</b> a pagar':'')+'. Informe sua renda para ver quanto sobra.</div><button class="btn s" onclick="irPlano()">🎯 Definir minha renda</button>';
+  h+='<div class="g2" style="margin-top:12px">'+k('💼','Renda',r,'fixa '+R(+S.plano.sal||0)+' • extras '+R(r-(+S.plano.sal||0)))+k('👤','Veículos pessoais',pes)+k('🏠','Casa e contas',casa)+'</div>'}
+ $('ov').innerHTML=h+'<div class="row" style="margin-top:12px"><button class="btn" style="margin:0" onclick="gqOpen()">＋ Gasto rápido</button>'+(tr?'<button class="btn s" style="margin:0" onclick="gqGanho()">＋ Ganho</button>':'')+'</div>'}
 function irPlano(){if(S.esp!='pessoal')setEsp('pessoal');go('plano')}
 function gqOpen(){const t=S.esp=='trabalho';$('gqH').textContent='Gasto rápido — '+(t?'Trabalho':'Dia a dia');$('gqc').innerHTML=(t?TCAT:CC).map(c=>'<option>'+c+'</option>').join('');$('gqd').value=$('gqv').value='';
  $('gqI').textContent=t?'Vai para os gastos de trabalho. Combustível, oficina e materiais dos atendimentos já entram sozinhos.':'Vai para Casa e contas → Gasto do dia a dia.';$('mGq').classList.add('on')}
