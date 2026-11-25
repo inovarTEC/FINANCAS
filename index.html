@@ -98,7 +98,7 @@ html.lock,html.lock body{overflow:hidden}
 #rep{display:none}
 @media print{body::before,.app,.mo,.toast{display:none!important}body{background:#fff!important;display:block}#rep{display:block;color:#000;background:#fff;font-size:12px;padding:8px}
 #rep h1{font-size:20px}#rep h2{font-size:14px;margin:14px 0 6px;border-bottom:1px solid #999}#rep table{width:100%;border-collapse:collapse}#rep td,#rep th{border-bottom:1px solid #ccc;padding:4px;text-align:left}#rep td:last-child,#rep th:last-child{text-align:right}
-#rep table.m td:not(:first-child),#rep table.m th:not(:first-child){text-align:right}#rep th{background:#eee}#rep tr{break-inside:avoid}#rep h2{break-after:avoid}#rep .sub{color:#444;font-size:11px}#rep tr.t td{font-weight:800}
+#rep table.m td:not(:first-child),#rep table.m th:not(:first-child){text-align:right}#rep th{background:#eee}#rep tr{break-inside:avoid}#rep h2{break-after:avoid}#rep h2.blk{font-size:16px;margin-top:22px;border-bottom:2px solid #333}#rep .sub{color:#444;font-size:11px}#rep tr.t td{font-weight:800}
 #rep{padding-bottom:44px}#rep .foot{position:fixed;left:0;right:0;bottom:0;border-top:1px solid #999;background:#fff;font-size:9px;color:#444;padding:4px 8px}
 @page{size:A4;margin:12mm}}
 </style>
@@ -818,7 +818,7 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const APP_V='v33',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const APP_V='v34',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
@@ -938,7 +938,7 @@ function relRows(){const a=[],ok=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)?d:'';
  return a.sort((x,y)=>x.dt<y.dt?-1:x.dt>y.dt?1:0)}
 const relGan=()=>trRows().filter(r=>r.k=='g').map(r=>({dt:r.dt,item:r.t,local:r.x,val:r.v})).sort((x,y)=>x.dt<y.dt?-1:x.dt>y.dt?1:0);
 function relAnos(){const y=new Date().getFullYear(),a=relRows().concat(relGan()).map(r=>+r.dt.slice(0,4)).filter(Boolean).concat([y]),mn=Math.min(...a),o=[];for(let i=y;i>=mn;i--)o.push(i);return o}
-function openRel(v){const o=['<option value="pes">👤 Pessoal (veículos pessoais)</option>','<option value="casa">🏠 Casa e contas</option>','<option value="trab">🛠️ Trabalho (ganhos, gastos e lucro)</option>','<option value="tudo">📚 Geral (pessoal + casa + trabalho)</option>'];
+function openRel(v){const o=['<option value="pes">👤 Pessoal (veículos pessoais)</option>','<option value="casa">🏠 Casa e contas</option>','<option value="trab">🛠️ Trabalho (ganhos, gastos e lucro)</option>','<option value="pessoal">👤 Pessoal completo (renda, veículos, casa e contas)</option>','<option value="tudo">📚 Geral (Pessoal e Trabalho separados)</option>'];
  if(S.cars.length)o.push('<optgroup label="Por veículo">'+S.cars.map(c=>'<option value="v:'+c.id+'">🚘 '+esc(vn(c))+(c.uso=='trabalho'?' (trabalho)':' (pessoal)')+'</option>').join('')+'</optgroup>');
  $('rlS').innerHTML=o.join('');$('rlS').value=v===true&&car().id?'v:'+car().id:typeof v=='string'?v:'tudo';
  $('rlY').innerHTML=relAnos().map(y=>'<option>'+y+'</option>').join('');$('rlM').value=mK(0);relP('ano');relD('det');$('mRel').classList.add('on')}
@@ -947,32 +947,44 @@ function relD(d){relDet=d;document.querySelectorAll('#rlDs button').forEach(b=>b
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 function relGerar(){const sc=$('rlS').value,per=relPer,det=relDet;let pf='',pl='Todo o período';
  if(per=='ano'){pf=String($('rlY').value);pl='Ano de '+pf}else if(per=='mes'){pf=$('rlM').value;if(!/^\d{4}-\d{2}$/.test(pf)){toast('Escolha o mês');return}pl=MESES[+pf.slice(5,7)-1]+' de '+pf.slice(0,4)}
- const inP=r=>per=='tudo'||(r.dt&&r.dt.indexOf(pf)==0);let cars=[],incC=false,incT=false,lbl='';
+ const inP=r=>per=='tudo'||(r.dt&&r.dt.indexOf(pf)==0);let cars=[],incC=false,incT=false,incP=false,lbl='';
  if(sc=='casa'){incC=true;lbl='Casa e contas'}else if(sc=='pes'){cars=S.cars.filter(c=>c.uso!='trabalho');lbl='Pessoal — veículos pessoais'}
- else if(sc=='trab'){cars=S.cars.filter(c=>c.uso=='trabalho');incT=true;lbl='Trabalho'}else if(sc=='tudo'){cars=S.cars;incC=incT=true;lbl='Geral — pessoal, casa e trabalho'}
+ else if(sc=='pessoal'){cars=S.cars.filter(c=>c.uso!='trabalho');incC=incP=true;lbl='Pessoal — renda, veículos pessoais, casa e contas'}
+ else if(sc=='trab'){cars=S.cars.filter(c=>c.uso=='trabalho');incT=true;lbl='Trabalho'}else if(sc=='tudo'){cars=S.cars;incC=incT=incP=true;lbl='Geral — Pessoal e Trabalho separados'}
  else{const c=S.cars.find(x=>'v:'+x.id==sc);if(!c){toast('Escolha o que incluir');return}cars=[c];lbl='Veículo: '+vn(c)}
  const rows=relRows().filter(inP).filter(r=>r.area=='v'?cars.some(c=>c.id==r.vid):r.area=='c'?incC:incT),gan=incT?relGan().filter(inP):[],
  sm=L=>L.reduce((a,r)=>a+r.val,0),isW=r=>r.area=='v'&&r.uso=='trabalho',Tp=sm(rows.filter(r=>r.area=='v'&&!isW(r))),Tvw=sm(rows.filter(isW)),Tc=sm(rows.filter(r=>r.area=='c')),Tt=sm(rows.filter(r=>r.area=='t')),Tw=Tvw+Tt,T=Tp+Tc+Tw,G=sm(gan);
+ const cm=mesK(),mR=(a,b)=>{const o=[],e=+b.slice(0,4)*12+ +b.slice(5,7);let y=+a.slice(0,4),m=+a.slice(5,7);while(y*12+m<=e&&o.length<600){o.push(y+'-'+String(m).padStart(2,'0'));if(++m>12){m=1;y++}}return o},
+ minM=rows.concat(gan).map(r=>r.dt.slice(0,7)).filter(Boolean).sort()[0]||cm,
+ MP=per=='mes'?[pf]:per=='ano'?Array.from({length:12},(_,i)=>pf+'-'+String(i+1).padStart(2,'0')):mR(minM,cm),
+ rM=k=>k&&k<=cm?(+S.plano.sal||0)+S.plano.extras.reduce((a,e)=>a+(e.fr=='semanal'?e.v*52/12:e.fr=='mensal'?e.v:(e.mk==k?e.v:0)),0):0,
+ Rn=incP?Math.round(MP.reduce((a,k)=>a+rM(k),0)*100)/100:0,nM=MP.filter(k=>k<=cm).length;
  const grp=L=>{const g={};L.forEach(r=>r.parts.forEach(([k,v])=>{g[k]=(g[k]||0)+v}));return Object.entries(g).sort((x,y)=>y[1]-x[1])};
  const tabCat=(L,tt)=>'<table>'+(L.length?L.map(([k,v])=>'<tr><td>'+esc(k)+'</td><td>'+(tt?Math.round(v/tt*100)+'%':'')+'</td><td>'+R(v)+'</td></tr>').join(''):'<tr><td colspan="3">Sem lançamentos no período.</td></tr>')+'<tr class="t"><td>Total</td><td></td><td>'+R(tt)+'</td></tr></table>';
  const lanc=L=>'<table><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>'+(L.length?L.map(r=>'<tr><td>'+dBR(r.dt)+'</td><td>'+esc(r.item)+(r.local?' <span class="sub">— '+esc(r.local)+'</span>':'')+'</td><td>'+esc(r.cat)+'</td><td>'+R(r.val)+'</td></tr>').join(''):'<tr><td colspan="4">Sem lançamentos no período.</td></tr>')+'</table>';
- const lr=(k,v,t)=>'<tr'+(t?' class="t"':'')+'><td>'+k+'</td><td></td><td>'+R(v)+'</td></tr>';
+ const lr=(k,v,t)=>'<tr'+(t?' class="t"':'')+'><td>'+k+'</td><td></td><td>'+R(v)+'</td></tr>',hd=t=>'<h2 class="blk">'+t+'</h2>';
+ const sP=lr('Renda (estimada)',Rn)+lr('Veículos pessoais',Tp)+lr('Casa e contas',Tc)+lr('Total de gastos pessoais',Tp+Tc,1)+lr('Sobra pessoal (renda − gastos)',Rn-Tp-Tc,1),
+ sT=lr('Ganhos do trabalho',G)+lr('Veículos de trabalho',Tvw)+lr('Outros gastos do trabalho',Tt)+lr('Total de gastos do trabalho',Tw,1)+lr('Lucro do trabalho (ganhos − gastos)',G-Tw,1),
+ nota=incP?'<p class="sub">Renda estimada: salário fixo e extras informados no Plano × '+nM+' mês(es). O app não guarda o histórico da renda, então meses passados usam a renda atual.</p>':'';
  let h='<h1>Relatório de despesas</h1><p><b>'+esc(lbl)+'</b></p><p class="sub">Período: '+esc(pl)+' • Detalhe: '+(det=='det'?'detalhado':'resumido')+(incT&&S.trab.ativ?' • Atividade: '+esc(S.trab.ativ):'')+' • Emitido em '+new Date().toLocaleDateString('pt-BR')+'</p>';
- h+='<h2>Resumo geral</h2><table>'+(sc=='tudo'?lr('Veículos pessoais',Tp)+lr('Casa e contas',Tc)+lr('Trabalho (veículos e outros gastos)',Tw)+lr('Total de gastos',T,1)+lr('Ganhos do trabalho',G)+lr('Lucro do trabalho (ganhos − gastos do trabalho)',G-Tw,1)
-  :sc=='trab'?lr('Ganhos',G)+lr('Gastos do trabalho'+(Tvw?' (veículos '+R(Tvw)+' + outros '+R(Tt)+')':''),Tw)+lr('Lucro',G-Tw,1):lr('Total do período',T,1))+'</table>';
- cars.forEach(c=>{const L=rows.filter(r=>r.area=='v'&&r.vid==c.id),tt=sm(L);
-  h+='<h2>🚘 '+esc(vn(c))+' ('+esc(c.tipo)+(c.uso=='trabalho'?', trabalho':'')+')'+((+c.km)?' • '+(+c.km).toLocaleString('pt-BR')+' km':'')+'</h2>'+tabCat(grp(L),tt)+(det=='det'?lanc(L):'');
-  if(sc.indexOf('v:')==0){const pend=(c.chk||[]).filter(i=>!i.d);if(pend.length)h+='<h2>Pendências da oficina</h2><ul>'+pend.map(i=>'<li>'+esc(i.t)+'</li>').join('')+'</ul>'}});
- if(incC){const L=rows.filter(r=>r.area=='c');h+='<h2>🏠 Casa e contas</h2>'+tabCat(grp(L),sm(L))+(det=='det'?lanc(L):'')}
- if(incT){const L=rows.filter(r=>r.area=='t');
-  h+='<h2>💰 Ganhos do trabalho</h2>'+(det=='det'?'<table><tr><th>Data</th><th>Cliente / serviço</th><th>Valor</th></tr>'+(gan.length?gan.map(r=>'<tr><td>'+dBR(r.dt)+'</td><td>'+esc(r.item)+(r.local?' <span class="sub">— '+esc(r.local)+'</span>':'')+'</td><td>'+R(r.val)+'</td></tr>').join(''):'<tr><td colspan="3">Sem ganhos no período.</td></tr>')+'<tr class="t"><td>Total de ganhos</td><td></td><td>'+R(G)+'</td></tr></table>':'<table>'+lr('Total de ganhos',G,1)+'</table>')
-   +'<h2>🧰 Outros gastos do trabalho (fora dos veículos)</h2>'+tabCat(grp(L),Tt)+(det=='det'?lanc(L):'')}
- if(per!='mes'){const mm={};const add=(k,f,v)=>{k=k||'';mm[k]=mm[k]||{p:0,c:0,w:0,g:0};mm[k][f]+=v};
+ if(sc=='tudo')h+=hd('Resumo geral')+'<h2>👤 Pessoal</h2><table>'+sP+'</table><h2>💼 Trabalho</h2><table>'+sT+'</table><h2>Visão consolidada</h2><table>'+lr('Entradas (renda + ganhos do trabalho)',Rn+G)+lr('Saídas (gastos pessoais + gastos do trabalho)',Tp+Tc+Tw)+lr('Saldo geral',Rn+G-Tp-Tc-Tw,1)+'</table>'+nota;
+ else h+='<h2>Resumo geral</h2><table>'+(sc=='pessoal'?sP:sc=='trab'?lr('Ganhos',G)+lr('Gastos do trabalho'+(Tvw?' (veículos '+R(Tvw)+' + outros '+R(Tt)+')':''),Tw)+lr('Lucro',G-Tw,1):lr('Total do período',T,1))+'</table>'+nota;
+ const carH=c=>{const L=rows.filter(r=>r.area=='v'&&r.vid==c.id),tt=sm(L);let x='<h2>🚘 '+esc(vn(c))+' ('+esc(c.tipo)+(c.uso=='trabalho'?', trabalho':'')+')'+((+c.km)?' • '+(+c.km).toLocaleString('pt-BR')+' km':'')+'</h2>'+tabCat(grp(L),tt)+(det=='det'?lanc(L):'');
+  if(sc.indexOf('v:')==0){const pend=(c.chk||[]).filter(i=>!i.d);if(pend.length)x+='<h2>Pendências da oficina</h2><ul>'+pend.map(i=>'<li>'+esc(i.t)+'</li>').join('')+'</ul>'}return x},
+ casaH=()=>{if(!incC)return'';const L=rows.filter(r=>r.area=='c');return'<h2>🏠 Casa e contas</h2>'+tabCat(grp(L),sm(L))+(det=='det'?lanc(L):'')},
+ trabH=()=>{if(!incT)return'';const L=rows.filter(r=>r.area=='t');
+  return'<h2>💰 Ganhos do trabalho</h2>'+(det=='det'?'<table><tr><th>Data</th><th>Cliente / serviço</th><th>Valor</th></tr>'+(gan.length?gan.map(r=>'<tr><td>'+dBR(r.dt)+'</td><td>'+esc(r.item)+(r.local?' <span class="sub">— '+esc(r.local)+'</span>':'')+'</td><td>'+R(r.val)+'</td></tr>').join(''):'<tr><td colspan="3">Sem ganhos no período.</td></tr>')+'<tr class="t"><td>Total de ganhos</td><td></td><td>'+R(G)+'</td></tr></table>':'<table>'+lr('Total de ganhos',G,1)+'</table>')
+   +'<h2>🧰 Outros gastos do trabalho (fora dos veículos)</h2>'+tabCat(grp(L),Tt)+(det=='det'?lanc(L):'')};
+ if(sc=='tudo')h+=hd('👤 Pessoal — detalhes')+cars.filter(c=>c.uso!='trabalho').map(carH).join('')+casaH()+hd('💼 Trabalho — detalhes')+cars.filter(c=>c.uso=='trabalho').map(carH).join('')+trabH();
+ else h+=cars.map(carH).join('')+casaH()+trabH();
+ if(per!='mes'){const mm={},add=(k,f,v)=>{k=k||'';mm[k]=mm[k]||{p:0,c:0,w:0,g:0,r:0};mm[k][f]+=v};
   rows.forEach(r=>add(r.dt.slice(0,7),r.area=='c'?'c':(r.area=='t'||isW(r))?'w':'p',r.val));gan.forEach(r=>add(r.dt.slice(0,7),'g',r.val));
-  if(per=='ano')for(let i=1;i<=12;i++){const k=pf+'-'+String(i).padStart(2,'0');if(!mm[k])mm[k]={p:0,c:0,w:0,g:0}}
-  const C=sc=='tudo'?[['Pessoal',m=>m.p],['Casa e contas',m=>m.c],['Trabalho',m=>m.w],['Total de gastos',m=>m.p+m.c+m.w],['Ganhos do trabalho',m=>m.g]]:sc=='trab'?[['Ganhos',m=>m.g],['Gastos',m=>m.w],['Lucro',m=>m.g-m.w]]:[['Total',m=>m.p+m.c+m.w]],
-  K=Object.keys(mm).sort(),lb=k=>k?MESES[+k.slice(5,7)-1]+(per=='tudo'?'/'+k.slice(0,4):''):'Sem data',tm={p:Tp,c:Tc,w:Tw,g:G};
-  h+='<h2>Totais por mês</h2><table class="m"><tr><th>Mês</th>'+C.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr>'+K.map(k=>'<tr><td>'+lb(k)+'</td>'+C.map(c=>'<td>'+R(c[1](mm[k]))+'</td>').join('')+'</tr>').join('')+'<tr class="t"><td>Total</td>'+C.map(c=>'<td>'+R(c[1](tm))+'</td>').join('')+'</tr></table>'}
+  if(per=='ano'||incP)MP.forEach(k=>{if(!mm[k])mm[k]={p:0,c:0,w:0,g:0,r:0}});
+  if(incP)Object.keys(mm).forEach(k=>{mm[k].r=rM(k)});
+  const K=Object.keys(mm).sort(),lb=k=>k?MESES[+k.slice(5,7)-1]+(per=='tudo'?'/'+k.slice(0,4):''):'Sem data',
+  mt=(t,C)=>'<h2>'+t+'</h2><table class="m"><tr><th>Mês</th>'+C.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr>'+K.map(k=>'<tr><td>'+lb(k)+'</td>'+C.map(c=>'<td>'+R(c[1](mm[k]))+'</td>').join('')+'</tr>').join('')+'<tr class="t"><td>Total</td>'+C.map(c=>'<td>'+R(K.reduce((a,k)=>a+c[1](mm[k]),0))+'</td>').join('')+'</tr></table>',
+  cP=[['Renda (est.)',m=>m.r],['Veículos pessoais',m=>m.p],['Casa e contas',m=>m.c],['Sobra',m=>m.r-m.p-m.c]],cT=[['Ganhos',m=>m.g],['Gastos',m=>m.w],['Lucro',m=>m.g-m.w]];
+  h+=sc=='tudo'?mt('👤 Pessoal — totais por mês',cP)+mt('💼 Trabalho — totais por mês',cT):sc=='pessoal'?mt('Totais por mês',cP):sc=='trab'?mt('Totais por mês',cT):mt('Totais por mês',[['Total',m=>m.p+m.c+m.w]])}
  h+='<div class="foot">Relatório de controle pessoal, gerado a partir de lançamentos informados pelo usuário (gastos já pagos e ganhos registrados). Não substitui notas fiscais, recibos ou orientação de um contador. AutoGestor Pro • emitido em '+new Date().toLocaleDateString('pt-BR')+'</div>';
  $('rep').innerHTML=h;closeM();try{window.print()}catch(e){toast('Abra o link direto no navegador para imprimir')}}
 
