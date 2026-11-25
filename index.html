@@ -118,7 +118,7 @@ html.lock,html.lock body{overflow:hidden}
  <div class="card" id="ov"></div>
  <div class="card" id="cart" style="display:none"></div>
  <div class="card" id="obI" onclick="go('plano')" style="cursor:pointer;display:none"></div>
- <div class="card" id="al"><div class="ct" id="alT">🔔 Agenda e pendências</div><div id="alL"></div></div>
+ <div class="card" id="al"><div class="ct" id="alT">🔔 Agenda e pendências</div><button class="btn" id="alAg" style="display:none;margin:0 0 10px" onclick="atNovo()">＋ Agenda rápida (novo atendimento)</button><div id="alL"></div></div>
 </section>
 
 <section class="tab" id="t-veic">
@@ -660,7 +660,7 @@ function agFil(k){agF=k;agLim=5;agR()}
 function agMais(){agLim+=5;agR()}
 function atRef(){save();render();if($('mAt').classList.contains('on'))atR();if($('mCl').classList.contains('on'))clR()}
 function atNovo(p){atFrom=p?p.id:null;atCp=p?p.srv.map(x=>({d:x.d,v:x.v})):[];$('anH').textContent=p&&p.st!=null?'Reagendar atendimento':'Novo atendimento';
- $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anDs').value=p?p.dsc||'':'';$('anD').value=agDia||hoje();$('anS').value='08:00';anTpV=p?tpOf(p):'servico';anTpR();$('mAn').classList.add('on')}
+ $('anC').value=p?p.cli:'';$('anT').value=p?p.tel:'';$('anL').value=p?p.loc:'';$('anDs').value=p?p.dsc||'':'';$('anD').value=($('t-prof').classList.contains('on')&&agDia)||hoje();$('anS').value='08:00';anTpV=p?tpOf(p):'servico';anTpR();$('mAn').classList.add('on')}
 let anTpV='servico';
 function anTpR(){$('anDs').placeholder={servico:'Ex.: instalar chuveiro elétrico',orcamento:'Ex.: orçamento de bomba d’água',ocorrencia:'Ex.: problema elétrico'}[anTpV];$('anTp').innerHTML=Object.keys(TPN).map(k=>'<button class="'+(anTpV==k?'on':'')+'" onclick="anTpSet(\''+k+'\')">'+TPI[k]+' '+TPN[k]+'</button>').join('');const d=$('anD').value,h=$('anS').value,e=$('anHint');e.style.display=anTpV=='ocorrencia'&&d&&h&&dentroExp(d,h)?'':'none';e.textContent='💡 Ocorrência costuma ser fora do expediente (seg–sex 8h–18h, sáb 8h–12h). Você pode manter este horário.'}
 function anTpSet(k){anTpV=k;anTpR()}
@@ -676,7 +676,7 @@ function anFill(){const c=clC($('anC').value);if(c.u){if(!$('anT').value)$('anT'
 function atNovoSave(){const cli=$('anC').value.trim().slice(0,60),d=$('anD').value,h=$('anS').value;if(!cli){toast('Informe o nome do cliente');return}
  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){toast('Escolha a data');return}if(!/^\d{2}:\d{2}$/.test(h)){toast('Escolha a hora');return}if(S.trab.ats.length>=3000){toast('Limite de atendimentos atingido');return}
  S.trab.ats.push({id:Date.now(),cli,tel:$('anT').value.trim().slice(0,20),loc:$('anL').value.trim().slice(0,80),dsc:$('anDs').value.trim().slice(0,80),dt:d+'T'+h,tp:anTpV,orig:(atFrom&&(atAch(atFrom)||{}).orig)||'',geo:clC(cli).geo,st:'agendado',ent:'',sai:'',srv:atCp.map(x=>({d:x.d,v:x.v})),mat:[],pago:false,pgdt:''});
- if(atFrom){const o=atAch(atFrom);if(o&&o.st=='agendado'){o.st='nao';o.ent='';o.sai=''}}atFrom=null;atCp=[];agF=d==hoje()?'hoje':d>hoje()?'prox':'nao';if(agDia)agDia=d;closeM();atRef();toast('Atendimento agendado para '+dBR(d)+' às '+h)}
+ if(atFrom){const o=atAch(atFrom);if(o&&o.st=='agendado'){o.st='nao';o.ent='';o.sai=''}}atFrom=null;atCp=[];agF=d==hoje()?'hoje':d>hoje()?'prox':'nao';if(agDia&&$('t-prof').classList.contains('on'))agDia=d;closeM();atRef();toast('Atendimento agendado para '+dBR(d)+' às '+h)}
 function atOpen(id){if(!atAch(id))return;closeM();atId=id;atR();$('mAt').classList.add('on')}
 function atChega(id){const a=atAch(id);if(!a)return;a.ent=nowL();a.sai='';save();render();atOpen(id);toast('Entrada registrada às '+a.ent.slice(11))}
 function atSai(id){const a=atAch(id);if(!a)return;a.sai=nowL();a.st='atendido';atRef();toast('Serviço concluído'+(ATT(a)?'. Total '+R(ATT(a)):''))}
@@ -797,14 +797,15 @@ function home(){
  const pos=ks.filter(k=>c[k]>0).sort((a,b)=>c[b]-c[a]);
  $('ins').innerHTML=!pos.length?'💡 Registre seu primeiro gasto para ver a análise aqui.':pos.length==1?'💡 Todo o gasto do período foi com <b>'+pos[0]+'</b>.':'💡 Seu maior gasto foi com <b>'+pos[0]+'</b> e o menor foi com <b>'+pos[pos.length-1]+'</b>.';
  const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')',p:c.uso,car:c.id,k:'pd:'+c.id+':'+String(i.t).replace(/\W/g,'').slice(0,20)})));
- $('alT').textContent=S.esp=='trabalho'?'🔔 Agenda e pendências':'🔔 Pendências';$('alL').innerHTML=alHtml(ag,pend);
+ $('alT').textContent=S.esp=='trabalho'?'🔔 Agenda e pendências':'🔔 Pendências';$('alAg').style.display=S.esp=='trabalho'?'':'none';$('alL').innerHTML=alHtml(ag,pend);
  $('dot').style.display=alVis?'block':'none';
 }
-let alSh=false,alVis=0;
+let alSh=false,alVis=0,alAll=false;
+function alMais(){alAll=!alAll;home()}
 function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'};let m;while(m=x.h.match(/^<!--(P|K):([^>]*?)-->/)){if(m[1]=='P'){const q=m[2].split(':');x.p=q[0];x.car=+q[1]}else{const q=m[2].split('|');x.k=q[0];x.m=q[1]}x.h=x.h.slice(m[0].length)}return x},
  add=(L,p,tab,sub,anc)=>L.forEach(h=>{const x=P(h);if(x.p=='geral')x.p=p;x.tab=tab;x.sub=sub;x.anc=anc=='sg'&&/Financiamento/.test(x.h)?'fn':anc;it.push(x)});
  ag.forEach(r=>{const cr=S.cars.find(c=>c.id==r.vid);it.push({h:'🗓️ <b>Orçamento agendado:</b> '+esc(r.d||'Serviço')+' • '+esc(r.l||'Oficina')+' • '+fd(r.dt)+' (previsto '+R(tot(r))+')<br><button class="mini" style="margin:6px 4px 0 0" onclick="pagar('+r.id+')">✔ Marcar como pago</button>',p:cr?cr.uso:'pessoal',car:0,tab:'',k:'',m:'f'})});
- add(sgAl(),'pessoal','veic','seg','sg');add(ctAl(),'pessoal','casa','ct','ctL');add(plAl(),'pessoal','plano','','plT');add(ecoAl(),'pessoal','casa','dia','gL');add(manAl(),'pessoal','veic','ofi','manL');add(agAl(),'trabalho','prof','rec','agL');add(bkAl(),'geral','','','');
+ add(ctAl(),'pessoal','casa','ct','ctL');add(agAl(),'trabalho','prof','rec','agL');add(sgAl(),'pessoal','veic','seg','sg');add(manAl(),'pessoal','veic','ofi','manL');add(plAl(),'pessoal','plano','','plT');add(ecoAl(),'pessoal','casa','dia','gL');add(bkAl(),'geral','','','');
  S.casa.listas.forEach(l=>{const n=l.itens.filter(i=>!i.d).length;if(!n)return;const t=l.tipo=='trabalho',c=l.tipo=='compra';it.push({h:(t?'📋 <b>Checklist de serviço:</b> ':c?'🛒 <b>Lista de compras:</b> ':'🧹 <b>Serviço doméstico:</b> ')+esc(l.nome)+' — '+n+(c?' ite'+(n>1?'ns':'m'):' etapa'+(n>1?'s':''))+' pendente'+(n>1?'s':''),p:t?'trabalho':'pessoal',car:0,tab:t?'prof':'casa',sub:t?'fer':'dia',anc:t?'tsc':'lc',lst:l.tipo+':'+l.id,k:'ls:'+l.id,m:'s'})});
  pend.forEach(i=>it.push({h:'⏳ <b>Pendente na oficina:</b> '+esc(i.t),p:i.p,car:i.car,tab:'veic',sub:'ofi',anc:'cL',k:i.k,m:'s'}));
  for(let i=it.length;i--;)if(it[i].p!=S.esp&&it[i].p!='geral')it.splice(i,1);
@@ -815,10 +816,10 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  const row=x=>{const sz=x.m!='f'&&x.k,hh=hd(x),hb=x.h.includes('onclick'),B='<button class="mini" style="margin:6px 4px 0 0" onclick="',
   b=(x.tab&&!x.h.includes('class="lk"')?B+'alIr(\''+x.p+'\',\''+x.tab+'\','+x.car+',\''+(x.sub||'')+'\',\''+(x.anc||'')+'\',\''+(sz?x.k:'')+'\',\''+(sz?x.m:'')+'\',\''+(x.lst||'')+'\')">Abrir ›</button>':'')+(sz?(hh?B+'alBack(\''+x.k+'\')">↩ Mostrar de novo</button>':B+'alSoneca(\''+x.k+'\',\''+x.m+'\')">'+(x.m=='d'?'✖ Dispensar':'⏰ Lembrar amanhã')+'</button>'):'');
   return '<div class="al">'+(hh?'<span class="tg">💤</span>':'')+x.h+(b?(hb?'':'<br>')+b:'')+'</div>'};
- return (vis.length?vis.map(row).join(''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
+ return (vis.length?(alAll?vis:vis.slice(0,5)).map(row).join('')+(vis.length>5?'<button class="btn s" onclick="alMais()">'+(alAll?'Ver menos':'Ver mais ('+(vis.length-5)+')')+'</button>':''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const APP_V='v34',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const APP_V='v35',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
