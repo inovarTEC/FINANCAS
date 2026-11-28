@@ -201,6 +201,13 @@ html.lock,html.lock body{overflow:hidden}
  <div class="card"><div class="ct" id="plT"></div><div id="plR"></div></div>
 </section>
 
+<section class="tab" id="t-cli">
+ <div class="card"><div class="ct">👥 Clientes</div>
+  <button class="btn" style="margin:0 0 10px" onclick="atNovo()">＋ Novo atendimento</button>
+  <input id="fcq" placeholder="Buscar cliente pelo nome ou telefone…" oninput="fcLim=8;fcR()">
+  <div id="fcL" style="margin-top:8px"></div></div>
+</section>
+
 <section class="tab" id="t-prof">
  <div class="seg" id="tvs"><button class="on" data-v="ag" onclick="trv('ag')">📅 Agenda</button><button data-v="res" onclick="trv('res')">📊 Resultado</button><button data-v="fer" onclick="trv('fer')">🛠️ Ferramentas</button></div>
  <div id="tr-ag">
@@ -245,13 +252,13 @@ html.lock,html.lock body{overflow:hidden}
  <div class="card"><div class="acc" id="fh-ck" onclick="ferT('ck')"></div><div id="fb-ck" style="display:none"><input id="tsn" maxlength="60" placeholder="Nome do serviço (ex.: Instalar chuveiro, Cliente João)">
   <button class="btn s" onclick="addL('trab')">+ Criar checklist</button>
   <div class="chips" id="tsc"></div><div id="tsB"></div></div></div>
- <div class="card"><div class="acc" id="fh-cl" onclick="ferT('cl')"></div><div id="fb-cl" style="display:none"><input id="fcq" placeholder="Buscar cliente pelo nome ou telefone…" oninput="fcLim=8;fcR()"><div id="fcL" style="margin-top:8px"></div></div></div>
  </div>
 </section>
 
 <nav>
  <button class="on" data-t="inicio" onclick="go('inicio')"><i>📊</i>Início</button>
  <button data-t="veic" onclick="go('veic')"><i>🚘</i>Veículos</button>
+ <button data-t="cli" onclick="go('cli')"><i>👥</i>Clientes</button>
  <button data-t="casa" onclick="go('casa')"><i>🏠</i>Casa/Contas</button>
  <button data-t="plano" onclick="go('plano')"><i>🎯</i>Plano</button>
  <button data-t="prof" onclick="go('prof')"><i>👷</i>Trabalho</button>
@@ -598,14 +605,14 @@ function trOq(){const P=d=>trPer=='ano'?d.slice(0,4)==trYM.slice(0,4):d.slice(0,
  oc=L.filter(a=>tpOf(a)=='ocorrencia'&&a.st=='atendido'),rec=oc.filter(a=>a.pago).reduce((x,a)=>x+ATT(a),0),vab=ab.reduce((x,a)=>x+ATT(a),0);
  $('trOq').innerHTML='<div class="g2"><div class="kpi"><span>📝 Orçamentos</span><strong>'+oq.length+'</strong><small>'+(oq.length?fe.length+' fecharam • '+Math.round(fe.length/oq.length*100)+'%':'Nenhum neste período')+'</small></div><div class="kpi"><span>🚨 Ocorrências</span><strong>'+oc.length+'</strong><small>'+(oc.length?R(rec)+' recebido':'Nenhuma neste período')+'</small></div></div>'+(ab.length?'<div class="ins" style="margin-top:10px">Em aberto: '+ab.length+' orçamento'+(ab.length>1?'s':'')+(vab>0?' • '+R(vab)+' que ainda podem fechar':'')+'</div>':'')}
 let ferOp='cb',FCN=[],fcLim=8;
-function ferR(){const A={cb:['👷 Quanto cobrar',''],ck:['📋 Checklists de serviço',S.casa.listas.filter(l=>l.tipo=='trabalho').length||''],cl:['👥 Clientes',new Set(S.trab.ats.map(a=>ATK(a.cli))).size||'']};
- Object.keys(A).forEach(k=>{const on=ferOp==k;$('fh-'+k).className='acc'+(on?' on':'');$('fh-'+k).innerHTML='<span>'+A[k][0]+'</span><small>'+(A[k][1]!==''?A[k][1]+' ':'')+(on?'▾':'▸')+'</small>';$('fb-'+k).style.display=on?'':'none'});if(ferOp=='cl')fcR()}
+function ferR(){const A={cb:['👷 Quanto cobrar',''],ck:['📋 Checklists de serviço',S.casa.listas.filter(l=>l.tipo=='trabalho').length||'']};
+ Object.keys(A).forEach(k=>{const on=ferOp==k;$('fh-'+k).className='acc'+(on?' on':'');$('fh-'+k).innerHTML='<span>'+A[k][0]+'</span><small>'+(A[k][1]!==''?A[k][1]+' ':'')+(on?'▾':'▸')+'</small>';$('fb-'+k).style.display=on?'':'none'});}
 function ferT(k){ferOp=ferOp==k?'':k;ferR()}
 function fcR(){const nz=x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),q=nz($('fcq').value),qd=$('fcq').value.replace(/\D/g,''),M=new Map();
  S.trab.ats.forEach(a=>{const k=ATK(a.cli),o=M.get(k)||{n:a.cli,c:0,u:'',t:''};o.c++;if(a.dt>o.u){o.u=a.dt;o.n=a.cli}if(a.tel&&!o.t)o.t=a.tel;M.set(k,o)});
  const L=[...M.values()].filter(o=>!q||nz(o.n).includes(q)||(qd&&o.t.replace(/\D/g,'').includes(qd))).sort((x,y)=>x.u<y.u?1:-1);FCN=L.map(o=>o.n);
  $('fcL').innerHTML=L.length?L.slice(0,fcLim).map((o,i)=>'<div class="it" onclick="clOpen(FCN['+i+'])"><div class="b"><b>'+esc(o.n)+'</b><br><small style="color:var(--mu)">'+o.c+' atendimento'+(o.c>1?'s':'')+' • último '+dBR(o.u)+(o.t?' • '+esc(o.t):'')+'</small></div></div>').join('')+(L.length>fcLim?'<button class="btn s" onclick="fcLim+=8;fcR()">Ver mais ('+(L.length-fcLim)+')</button>':''):'<div class="emp">'+(M.size?'Nenhum cliente encontrado.':'Nenhum cliente ainda. Eles aparecem aqui quando você agenda um atendimento.')+'</div>'}
-function trR(){const e=$('trL');if(!e)return;trOq();ferR();const A=trRows().filter(trIn),G=A.filter(r=>r.k=='g').reduce((a,r)=>a+r.v,0),D=A.filter(r=>r.k!='g').reduce((a,r)=>a+r.v,0),L=Math.round((G-D)*100)/100,[y,m]=trYM.split('-');
+function trR(){const e=$('trL');if(!e)return;trOq();ferR();fcR();const A=trRows().filter(trIn),G=A.filter(r=>r.k=='g').reduce((a,r)=>a+r.v,0),D=A.filter(r=>r.k!='g').reduce((a,r)=>a+r.v,0),L=Math.round((G-D)*100)/100,[y,m]=trYM.split('-');
  $('trLb').textContent=trPer=='ano'?'Ano '+y:MESES[+m-1]+' de '+y;document.querySelectorAll('#trPs button').forEach(b=>b.classList.toggle('on',b.dataset.v==trPer));
  $('trG').textContent=R(G);$('trD').textContent=R(D);$('trLt').textContent=L<0?'⚠️ Prejuízo':'✅ Lucro';$('trLu').textContent=R(L);$('trLu').style.color=L<0?'#EF4444':'var(--ac)';
  $('trMg').textContent=!A.length?'Registre um ganho ou gasto para ver o resultado.':L<0?'Os gastos foram maiores que os ganhos neste período.':G>0?Math.round(L/G*100)+'% do que você ganhou ficou com você.':'';
@@ -779,7 +786,7 @@ function usaEm(id){const a=atAch(id),v=cv(),ds=Math.round((v.km*v.ckm+(v.inc?v.d
  if(ds>0)a.srv.push({d:v.km>0?('Deslocamento ('+v.km+' km)').slice(0,80):'Custo do veículo (diária)',v:ds});if(v.mo>0)a.srv.push({d:'Mão de obra',v:Math.round(v.mo*100)/100});
  closeM();atRef();atOpen(id);toast('Adicionado ao atendimento de '+a.cli)}
 function cxv(v){['dia','ct'].forEach(k=>$('cx-'+k).style.display=k==v?'':'none');document.querySelectorAll('#cxs button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
-const TABS={pessoal:['inicio','veic','casa','plano'],trabalho:['inicio','veic','prof']};
+const TABS={pessoal:['inicio','veic','casa','plano'],trabalho:['inicio','veic','cli','prof']};
 function aplicaEsp(){document.documentElement.dataset.esp=S.esp;document.querySelectorAll('#espS button').forEach(b=>b.classList.toggle('on',b.dataset.e==S.esp));
  document.querySelectorAll('nav button').forEach(b=>b.style.display=TABS[S.esp].includes(b.dataset.t)?'':'none');
  const on=document.querySelector('.tab.on');if(on&&!TABS[S.esp].includes(on.id.slice(2)))go('inicio')}
@@ -838,7 +845,7 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  return (vis.length?(alAll?vis:vis.slice(0,5)).map(row).join('')+(vis.length>5?'<button class="btn s" onclick="alMais()">'+(alAll?'Ver menos':'Ver mais ('+(vis.length-5)+')')+'</button>':''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const APP_V='v37',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const APP_V='v38',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
