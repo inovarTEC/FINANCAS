@@ -69,6 +69,7 @@ input[type=checkbox]{width:20px;height:20px;padding:0}
 .chips{display:flex;gap:6px;overflow-x:auto;margin:10px 0}.chips button{flex-shrink:0;border:1px solid var(--bd);background:var(--ph);color:var(--mu);border-radius:20px;padding:6px 12px;font-weight:700;font-size:calc(12px*var(--fs));cursor:pointer}
 .chips button.on{background:var(--pr);color:var(--pt)}
 .lk{cursor:pointer;text-decoration:underline dotted}
+.atb{display:flex;align-items:center;gap:8px;justify-content:flex-start;margin:0;padding:14px 12px;font-weight:700;text-align:left}.atb span{font-size:20px}
 .lk,#ctL,#sg,#fn,#manL,#cL,#plT,#gL,#agL{scroll-margin-top:90px}
 .undo{position:fixed;bottom:calc(150px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;z-index:310;display:none;align-items:center;gap:12px;max-width:92%}.undo button{background:transparent;border:1px solid #fff;color:#fff;border-radius:8px;padding:5px 10px;font-weight:800;cursor:pointer}
 .ds{font-size:calc(13px*var(--fs));margin:2px 0}
@@ -116,9 +117,10 @@ html.lock,html.lock body{overflow:hidden}
 
 <section class="tab on" id="t-inicio">
  <div class="card" id="ov"></div>
+ <div class="card" id="atl"></div>
  <div class="card" id="cart" style="display:none"></div>
  <div class="card" id="obI" onclick="go('plano')" style="cursor:pointer;display:none"></div>
- <div class="card" id="al"><div class="ct" id="alT">🔔 Agenda e pendências</div><button class="btn" id="alAg" style="display:none;margin:0 0 10px" onclick="atNovo()">＋ Agenda rápida (novo atendimento)</button><div id="alL"></div></div>
+ <div class="card" id="al"><div class="ct" id="alT">🔔 Agenda e pendências</div><div id="alL"></div></div>
 </section>
 
 <section class="tab" id="t-veic">
@@ -230,7 +232,7 @@ html.lock,html.lock body{overflow:hidden}
   <div class="card"><div class="ct">🗒️ Lançamentos do período</div><div id="trL"></div><button class="btn s" onclick="openRel('trab')">📄 Relatório de trabalho (PDF)</button></div>
  </div>
  <div id="tr-fer" style="display:none">
- <div class="card"><div class="ct">👷 Quanto cobrar</div>
+ <div class="card"><div class="acc on" id="fh-cb" onclick="ferT('cb')"></div><div id="fb-cb">
   <label>Distância ida e volta (km)</label><input id="pd" type="number" inputmode="decimal" oninput="calc()" placeholder="20">
   <label>Sua mão de obra (R$)</label><input id="pm" type="number" inputmode="decimal" oninput="calc()" placeholder="150">
   <div class="row"><div><label>Custo por km (R$)</label><input id="pk" type="number" inputmode="decimal" step="0.01" oninput="calc()"></div><div><label>Cota diária do carro (R$)</label><input id="pc" type="number" inputmode="decimal" step="0.01" oninput="calc()"></div></div>
@@ -239,10 +241,11 @@ html.lock,html.lock body{overflow:hidden}
   <div class="cr" id="cr"></div>
   <button class="btn" onclick="usaAt()">➕ Usar em um atendimento</button>
   <button class="btn w" onclick="zap()">📲 Enviar orçamento no WhatsApp</button>
-  <button class="btn s" onclick="copiar()">📋 Copiar orçamento</button></div>
- <div class="card"><div class="ct">📋 Checklist de serviço</div><input id="tsn" maxlength="60" placeholder="Nome do serviço (ex.: Instalar chuveiro, Cliente João)">
+  <button class="btn s" onclick="copiar()">📋 Copiar orçamento</button></div></div>
+ <div class="card"><div class="acc" id="fh-ck" onclick="ferT('ck')"></div><div id="fb-ck" style="display:none"><input id="tsn" maxlength="60" placeholder="Nome do serviço (ex.: Instalar chuveiro, Cliente João)">
   <button class="btn s" onclick="addL('trab')">+ Criar checklist</button>
-  <div class="chips" id="tsc"></div><div id="tsB"></div></div>
+  <div class="chips" id="tsc"></div><div id="tsB"></div></div></div>
+ <div class="card"><div class="acc" id="fh-cl" onclick="ferT('cl')"></div><div id="fb-cl" style="display:none"><input id="fcq" placeholder="Buscar cliente pelo nome ou telefone…" oninput="fcLim=8;fcR()"><div id="fcL" style="margin-top:8px"></div></div></div>
  </div>
 </section>
 
@@ -329,6 +332,14 @@ html.lock,html.lock body{overflow:hidden}
 <div class="mo" id="mUs"><div class="mb">
  <div class="mh"><span>Usar em qual atendimento?</span><button class="ib" onclick="closeM()">✖</button></div>
  <small id="usI" style="color:var(--mu);display:block;line-height:1.4;margin-bottom:8px"></small><div id="usB"></div>
+</div></div>
+
+<div class="mo" id="mCk"><div class="mb">
+ <div class="mh"><span>📋 Novo checklist</span><button class="ib" onclick="closeM()">✖</button></div>
+ <div class="seg" id="ckT"></div>
+ <label>Nome</label><input id="ckN" maxlength="60">
+ <button class="btn" onclick="ckCriar()">Criar e abrir</button>
+ <div id="ckL"></div>
 </div></div>
 
 <div class="mo" id="mAn"><div class="mb">
@@ -586,7 +597,15 @@ function trOq(){const P=d=>trPer=='ano'?d.slice(0,4)==trYM.slice(0,4):d.slice(0,
  oq=L.filter(a=>tpOf(a)=='orcamento'||a.orig=='orcamento'),fe=oq.filter(a=>tpOf(a)!='orcamento'),ab=oq.filter(a=>tpOf(a)=='orcamento'),
  oc=L.filter(a=>tpOf(a)=='ocorrencia'&&a.st=='atendido'),rec=oc.filter(a=>a.pago).reduce((x,a)=>x+ATT(a),0),vab=ab.reduce((x,a)=>x+ATT(a),0);
  $('trOq').innerHTML='<div class="g2"><div class="kpi"><span>📝 Orçamentos</span><strong>'+oq.length+'</strong><small>'+(oq.length?fe.length+' fecharam • '+Math.round(fe.length/oq.length*100)+'%':'Nenhum neste período')+'</small></div><div class="kpi"><span>🚨 Ocorrências</span><strong>'+oc.length+'</strong><small>'+(oc.length?R(rec)+' recebido':'Nenhuma neste período')+'</small></div></div>'+(ab.length?'<div class="ins" style="margin-top:10px">Em aberto: '+ab.length+' orçamento'+(ab.length>1?'s':'')+(vab>0?' • '+R(vab)+' que ainda podem fechar':'')+'</div>':'')}
-function trR(){const e=$('trL');if(!e)return;trOq();const A=trRows().filter(trIn),G=A.filter(r=>r.k=='g').reduce((a,r)=>a+r.v,0),D=A.filter(r=>r.k!='g').reduce((a,r)=>a+r.v,0),L=Math.round((G-D)*100)/100,[y,m]=trYM.split('-');
+let ferOp='cb',FCN=[],fcLim=8;
+function ferR(){const A={cb:['👷 Quanto cobrar',''],ck:['📋 Checklists de serviço',S.casa.listas.filter(l=>l.tipo=='trabalho').length||''],cl:['👥 Clientes',new Set(S.trab.ats.map(a=>ATK(a.cli))).size||'']};
+ Object.keys(A).forEach(k=>{const on=ferOp==k;$('fh-'+k).className='acc'+(on?' on':'');$('fh-'+k).innerHTML='<span>'+A[k][0]+'</span><small>'+(A[k][1]!==''?A[k][1]+' ':'')+(on?'▾':'▸')+'</small>';$('fb-'+k).style.display=on?'':'none'});if(ferOp=='cl')fcR()}
+function ferT(k){ferOp=ferOp==k?'':k;ferR()}
+function fcR(){const nz=x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),q=nz($('fcq').value),qd=$('fcq').value.replace(/\D/g,''),M=new Map();
+ S.trab.ats.forEach(a=>{const k=ATK(a.cli),o=M.get(k)||{n:a.cli,c:0,u:'',t:''};o.c++;if(a.dt>o.u){o.u=a.dt;o.n=a.cli}if(a.tel&&!o.t)o.t=a.tel;M.set(k,o)});
+ const L=[...M.values()].filter(o=>!q||nz(o.n).includes(q)||(qd&&o.t.replace(/\D/g,'').includes(qd))).sort((x,y)=>x.u<y.u?1:-1);FCN=L.map(o=>o.n);
+ $('fcL').innerHTML=L.length?L.slice(0,fcLim).map((o,i)=>'<div class="it" onclick="clOpen(FCN['+i+'])"><div class="b"><b>'+esc(o.n)+'</b><br><small style="color:var(--mu)">'+o.c+' atendimento'+(o.c>1?'s':'')+' • último '+dBR(o.u)+(o.t?' • '+esc(o.t):'')+'</small></div></div>').join('')+(L.length>fcLim?'<button class="btn s" onclick="fcLim+=8;fcR()">Ver mais ('+(L.length-fcLim)+')</button>':''):'<div class="emp">'+(M.size?'Nenhum cliente encontrado.':'Nenhum cliente ainda. Eles aparecem aqui quando você agenda um atendimento.')+'</div>'}
+function trR(){const e=$('trL');if(!e)return;trOq();ferR();const A=trRows().filter(trIn),G=A.filter(r=>r.k=='g').reduce((a,r)=>a+r.v,0),D=A.filter(r=>r.k!='g').reduce((a,r)=>a+r.v,0),L=Math.round((G-D)*100)/100,[y,m]=trYM.split('-');
  $('trLb').textContent=trPer=='ano'?'Ano '+y:MESES[+m-1]+' de '+y;document.querySelectorAll('#trPs button').forEach(b=>b.classList.toggle('on',b.dataset.v==trPer));
  $('trG').textContent=R(G);$('trD').textContent=R(D);$('trLt').textContent=L<0?'⚠️ Prejuízo':'✅ Lucro';$('trLu').textContent=R(L);$('trLu').style.color=L<0?'#EF4444':'var(--ac)';
  $('trMg').textContent=!A.length?'Registre um ganho ou gasto para ver o resultado.':L<0?'Os gastos foram maiores que os ganhos neste período.':G>0?Math.round(L/G*100)+'% do que você ganhou ficou com você.':'';
@@ -797,7 +816,7 @@ function home(){
  const pos=ks.filter(k=>c[k]>0).sort((a,b)=>c[b]-c[a]);
  $('ins').innerHTML=!pos.length?'💡 Registre seu primeiro gasto para ver a análise aqui.':pos.length==1?'💡 Todo o gasto do período foi com <b>'+pos[0]+'</b>.':'💡 Seu maior gasto foi com <b>'+pos[0]+'</b> e o menor foi com <b>'+pos[pos.length-1]+'</b>.';
  const ag=S.regs.filter(r=>r.ag).sort((a,b)=>a.dt<b.dt?-1:1),pend=S.cars.flatMap(c=>(c.chk||[]).filter(i=>!i.d).map(i=>({t:i.t+' ('+vn(c)+')',p:c.uso,car:c.id,k:'pd:'+c.id+':'+String(i.t).replace(/\W/g,'').slice(0,20)})));
- $('alT').textContent=S.esp=='trabalho'?'🔔 Agenda e pendências':'🔔 Pendências';$('alAg').style.display=S.esp=='trabalho'?'':'none';$('alL').innerHTML=alHtml(ag,pend);
+ $('alT').textContent=S.esp=='trabalho'?'🔔 Agenda e pendências':'🔔 Pendências';$('alL').innerHTML=alHtml(ag,pend);
  $('dot').style.display=alVis?'block':'none';
 }
 let alSh=false,alVis=0,alAll=false;
@@ -819,7 +838,7 @@ function alHtml(ag,pend){const it=[],P=h=>{const x={h,p:'geral',car:0,k:'',m:'f'
  return (vis.length?(alAll?vis:vis.slice(0,5)).map(row).join('')+(vis.length>5?'<button class="btn s" onclick="alMais()">'+(alAll?'Ver menos':'Ver mais ('+(vis.length-5)+')')+'</button>':''):'<div class="emp">Nenhum alerta por enquanto.</div>')+(hid.length?'<div class="emp" style="cursor:pointer" onclick="alVer()">💤 '+hid.length+' adiado'+(hid.length>1?'s':'')+' • '+(alSh?'ocultar':'ver')+'</div>'+(alSh?hid.map(row).join(''):''):'')}
 function alVer(){alSh=!alSh;render()}
 function alSoneca(k,m){S.snooze=S.snooze||{};Object.keys(S.snooze).forEach(q=>{if(S.snooze[q]!='9999-12-31'&&S.snooze[q]<=hoje())delete S.snooze[q]});S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1);save();render();toast(m=='d'?'Aviso dispensado':'Aviso adiado até amanhã')}
-const APP_V='v35',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const APP_V='v37',MPN={apple:'Apple Maps',google:'Google Maps',waze:'Waze'},mapaLbl=()=>'🗺️ Abrir no '+(isIOS()?MPN[S.mapa||'apple']:'mapa'),isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function zapUrl(n,t){return isIOS()?'whatsapp://send?'+(n?'phone='+n+'&':'')+'text='+encodeURIComponent(t):'https://wa.me/'+n+'?text='+encodeURIComponent(t)}
 function navClear(){try{localStorage.removeItem(KEY+'_nav')}catch(e){}}
 function navSave(){try{const m=document.querySelector('.mo.on'),t=document.querySelector('.tab.on'),q=(sel,k)=>{const b=document.querySelector(sel+' button.on');return b?b.dataset[k]||'':''};
@@ -838,13 +857,24 @@ function voltou(){navClear();const t=$('toast');if(t){clearTimeout(t._t);t.style
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible')voltou()});
 window.addEventListener('pageshow',e=>{if(e.persisted)voltou()});
 function alBack(k){if(S.snooze)delete S.snooze[k];save();render()}
+function selLista(tp,id){acCl.casa=acCl.trab=null;if(tp=='trabalho'){ferOp='ck';ferR();selL('trab',id)}else{ltSet(tp);selL('casa',id)}}
+let ckTp='compra';
+function ckOpen(){ckR();$('ckN').value='';$('mCk').classList.add('on')}
+function ckSet(t){ckTp=t;ckR()}
+function ckR(){const tr=S.esp=='trabalho',tp=tr?'trabalho':ckTp;$('ckT').style.display=tr?'none':'';
+ $('ckT').innerHTML=[['compra','🛒 Lista de compras'],['servico','🧹 Serviço doméstico']].map(x=>'<button class="'+(ckTp==x[0]?'on':'')+'" onclick="ckSet(\''+x[0]+'\')">'+x[1]+'</button>').join('');
+ $('ckN').placeholder=tr?'Ex.: Instalar chuveiro, Cliente João':tp=='compra'?'Ex.: Mercado, Farmácia':'Ex.: Limpar o jardim';
+ const L=S.casa.listas.filter(l=>l.tipo==tp);
+ $('ckL').innerHTML=L.length?'<div class="ct" style="margin:14px 0 6px">Abrir uma que já existe</div>'+L.map(l=>'<div class="acc" onclick="ckIr(\''+l.tipo+'\','+l.id+')"><span>'+esc(l.nome)+'</span><small>'+l.itens.filter(i=>i.d).length+' de '+l.itens.length+' ›</small></div>').join(''):''}
+function ckCriar(){const n=$('ckN').value.trim().slice(0,60);if(!n){toast('Dê um nome ao checklist');return}ckIr(...(l=>[l.tipo,l.id])(mkLista(n,S.esp=='trabalho'?'trabalho':ckTp)))}
+function ckIr(tp,id){closeM();save();render();go(tp=='trabalho'?'prof':'casa');if(tp=='trabalho')trv('fer');else cxv('dia');selLista(tp,id);rolaA(tp=='trabalho'?'tsi':'li')}
 function alIr(p,t,car,sub,anc,k,m,lst){closeM();if(car){if(p=='trabalho')S.trab.cur=car;else S.cur=car}
  const adia=k&&m&&m!='f';if(adia){S.snooze=S.snooze||{};S.snooze[k]=m=='d'?'9999-12-31':addD(hoje(),1)}
  if(car||adia)save();
  render();if(adia)toast('Aviso adiado até amanhã');
  go(t);if(t=='veic'&&sub)vsub(sub);else if(t=='casa'&&sub)cxv(sub);else if(t=='prof'){if(sub=='fer')trv('fer');else{trv('ag');agVs('lista');if(sub=='rec'){agF='rec';agR()}}}
- if(lst){const q=lst.split(':');acCl.casa=acCl.trab=null;if(q[0]=='trabalho')selL('trab',+q[1]);else{ltSet(q[0]);selL('casa',+q[1])}}
- if(anc)setTimeout(()=>{const e=$(anc);if(e)e.scrollIntoView({block:'start',behavior:'smooth'})},80)}
+ if(lst){const q=lst.split(':');selLista(q[0],+q[1])}
+ if(anc)rolaA(anc)}
 function ctPagar(id){ctPg(id);toast('Conta marcada como paga')}
 function pagar(id){const r=S.regs.find(x=>x.id==id);if(r){r.ag=false;save();render();toast('Registro marcado como pago')}}
 
@@ -1032,8 +1062,9 @@ const LID={casa:{c:'lc',n:'ln',i:'li',B:'lB',T:'lTot'},trab:{c:'tsc',n:'tsn',i:'
 const lsOf=ar=>S.casa.listas.filter(l=>ar=='trab'?l.tipo=='trabalho':l.tipo==ltp),selOf=ar=>ar=='trab'?tl:CL[ltp],LA=ar=>lsOf(ar||'casa').find(l=>l.id==selOf(ar||'casa'));
 function lstUp(ar){save();if(ar=='trab')lstR('trab');else casa()}
 function ltSet(v){ltp=v;document.querySelectorAll('#ltS button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));$('ln').placeholder=v=='compra'?'Nome da lista (ex.: Mercado, Farmácia)':'Nome do serviço (ex.: Limpar o jardim)';$('ladd').textContent=v=='compra'?'+ Criar lista':'+ Criar serviço';itEd=null;casa()}
+const mkLista=(n,tipo)=>{const l={id:Date.now()+S.casa.listas.length,nome:n,tipo,itens:[]};S.casa.listas.push(l);return l};
 function addL(ar){const I=LID[ar],n=$(I.n).value.trim().slice(0,60);if(!n){toast('Dê um nome para '+(ar=='trab'||ltp=='servico'?'o serviço':'a lista'));return}
- const l={id:Date.now()+S.casa.listas.length,nome:n,tipo:ar=='trab'?'trabalho':ltp,itens:[]};S.casa.listas.push(l);if(ar=='trab')tl=l.id;else CL[ltp]=l.id;$(I.n).value='';lstUp(ar)}
+ const l=mkLista(n,ar=='trab'?'trabalho':ltp);if(ar=='trab')tl=l.id;else CL[ltp]=l.id;$(I.n).value='';lstUp(ar)}
 function delL(ar){if(confirm('Apagar esta lista e todos os itens?')){const id=selOf(ar);S.casa.listas=S.casa.listas.filter(l=>l.id!=id);if(ar=='trab')tl=null;else CL[ltp]=null;itEd=null;lstUp(ar)}}
 function selL(ar,id){if(ar=='trab')tl=id;else CL[ltp]=id;itEd=null;lstR(ar);casaT()}
 function addI(ar){const l=LA(ar),v=$(LID[ar].i).value.trim().slice(0,120);if(!l||!v)return;l.itens.push({t:v,d:false,p:0,dt:''});lstUp(ar)}
@@ -1153,7 +1184,11 @@ function plAl(){const r=plRenda(),o=[];if(r<=0)return o;const p=S.plano,lim=r*(1
  if(b.t>0&&c.t>b.t)o.push(mkK('pl:c:'+mesK(),'s')+'📈 <b>Atenção:</b> você já gastou mais do que no mês passado inteiro ('+R(b.t)+')');return o}
 function plano(){const p=S.plano;$('ps').value=p.sal||'';$('pgu').value=p.gu;$('pin').value=p.iv;
  $('peL').innerHTML=p.extras.map(e=>'<div class="it"><div class="b"><div class="t"><span>'+esc(e.nome)+'</span><span>'+R(e.v)+'</span></div><small>'+({semanal:'Toda semana',mensal:'Todo mês',unico:'Só em '+e.mk})[e.fr]+'</small></div><button class="mini" onclick="plDel('+e.id+')">🗑️</button></div>').join('');plCalc()}
-function ov(){cartR();const x=vg(0),pend=plPend(),rc=atRec(),tr=S.esp=='trabalho',
+function atlR(){const L=S.esp=='trabalho'?[['📅','Novo atendimento','atNovo()'],['💰','Ganho','gqGanho()'],['🧾','Gasto rápido','gqOpen()'],['📋','Checklist','ckOpen()']]:[['🧾','Gasto rápido','gqOpen()'],['📋','Checklist','ckOpen()'],['📌','Conta a pagar',"irCampo('casa','ct','cn')"],['💼','Ganho extra',"irCampo('plano','','pen')"]];
+ $('atl').innerHTML='<div class="ct">⚡ Atalhos</div><div class="g2">'+L.map((x,i)=>'<button class="btn'+(i?' s':'')+' atb" onclick="'+x[2]+'"><span>'+x[0]+'</span>'+x[1]+'</button>').join('')+'</div>'}
+function rolaA(id,b){setTimeout(()=>{const e=$(id);if(e)e.scrollIntoView({block:b||'start',behavior:'smooth'})},80)}
+function irCampo(t,sub,id){go(t);if(sub)cxv(sub);rolaA(id,'center')}
+function ov(){cartR();atlR();const x=vg(0),pend=plPend(),rc=atRec(),tr=S.esp=='trabalho',
  k=(ic,t,v,sm)=>'<div class="kpi"><span>'+ic+' '+t+'</span><strong>'+R(v)+'</strong>'+(sm?'<small>'+sm+'</small>':'')+'</div>',
  bar=(pc,bad)=>'<div style="height:10px;border-radius:8px;background:var(--bd);overflow:hidden;margin:10px 0"><div style="height:100%;width:'+pc+'%;background:'+(bad?'#EF4444':'var(--ac)')+'"></div></div>',
  fs='<div style="font-size:calc(15px*var(--fs));line-height:1.45">';let h='<div class="ct">🧭 Visão geral do mês</div>';
@@ -1164,7 +1199,7 @@ function ov(){cartR();const x=vg(0),pend=plPend(),rc=atRec(),tr=S.esp=='trabalho
   h+=r>0?fs+'Neste mês você ganhou <b>'+R(r)+'</b>, gastou <b>'+R(gasto)+'</b> e '+(sobra>=0?'sobram':'faltam')+' <b style="color:'+(sobra>=0?'var(--ac)':'#EF4444')+'">'+R(Math.abs(sobra))+'</b>'+(pend>0?' (já contando '+R(pend)+' a pagar)':'')+'.</div>'+bar(pc,sobra<0)+'<small style="color:var(--mu)">'+pc+'% do que você ganhou já está comprometido.</small>'
    :fs+'Você gastou <b>'+R(gasto)+'</b> neste mês'+(pend>0?' e tem <b>'+R(pend)+'</b> a pagar':'')+'. Informe sua renda para ver quanto sobra.</div><button class="btn s" onclick="irPlano()">🎯 Definir minha renda</button>';
   h+='<div class="g2" style="margin-top:12px">'+k('💼','Renda',r,'fixa '+R(+S.plano.sal||0)+' • extras '+R(r-(+S.plano.sal||0)))+k('👤','Veículos pessoais',pes)+k('🏠','Casa e contas',casa)+'</div>'}
- $('ov').innerHTML=h+'<div class="row" style="margin-top:12px"><button class="btn" style="margin:0" onclick="gqOpen()">＋ Gasto rápido</button>'+(tr?'<button class="btn s" style="margin:0" onclick="gqGanho()">＋ Ganho</button>':'')+'</div>'}
+ $('ov').innerHTML=h}
 function irPlano(){if(S.esp!='pessoal')setEsp('pessoal');go('plano')}
 function gqOpen(){const t=S.esp=='trabalho';$('gqH').textContent='Gasto rápido — '+(t?'Trabalho':'Dia a dia');$('gqc').innerHTML=(t?TCAT:CC).map(c=>'<option>'+c+'</option>').join('');$('gqd').value=$('gqv').value='';
  $('gqI').textContent=t?'Vai para os gastos de trabalho. Combustível, oficina e materiais dos atendimentos já entram sozinhos.':'Vai para Casa e contas → Gasto do dia a dia.';$('mGq').classList.add('on')}
